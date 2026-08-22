@@ -147,12 +147,14 @@ export async function POST(req: NextRequest) {
         error: String(err),
       }).eq('id', runId)
     }
-    await admin.from('notifications').insert({
-      event: 'render_failed',
-      title: 'Falha na renderização',
-      body: String(err),
-      data: { creativeId: (await req.json().catch(() => ({}))).creativeId },
-    }).catch(() => { /* non-fatal */ })
+    try {
+      await admin.from('notifications').insert({
+        event: 'render_failed',
+        title: 'Falha na renderização',
+        body: String(err),
+        data: { creativeId: (await req.json().catch(() => ({} as Record<string, unknown>)) as { creativeId?: string }).creativeId },
+      })
+    } catch { /* non-fatal */ }
     console.error('[video-factory/render]', err)
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }

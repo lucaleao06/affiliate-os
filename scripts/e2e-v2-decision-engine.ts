@@ -85,6 +85,10 @@ const pkgInput = {
   width: 1080,
   height: 1920,
   codec: 'h264',
+  generatedAt: new Date().toISOString(),
+  scheduledAt: null,
+  publishedAt: null,
+  publishedUrl: null,
 }
 
 const checklist = buildPublicationChecklist(pkgInput)
@@ -99,6 +103,10 @@ const pkg: PublicationPackage = {
   checklist,
   status: 'ready',
   statusReason: null,
+  generatedAt: pkgInput.generatedAt,
+  scheduledAt: null,
+  publishedAt: null,
+  publishedUrl: null,
 }
 
 ok('rights gate passes for generated', rightsGatePassed(pkg).passed === true)
@@ -127,13 +135,13 @@ const winnerInsight: GrowthInsight = {
   confidence: 0.82,
   reason: 'Top 20% commission, 5 orders, stable trend',
   recommendedAction: 'scale_creatives',
-  metrics: { commission: 149.95, orders: 5, conversionRate: 0.035, trend: 0.42 },
+  metrics: { commissionTotal: 149.95, ordersTotal: 5, conversionRate: 0.035, commissionTrend: 0.42 },
   detectedAt: new Date().toISOString(),
 }
 
 ok('winner confidence >= 0.65', winnerInsight.confidence >= 0.65)
 ok('winner has recommended action', winnerInsight.recommendedAction === 'scale_creatives')
-ok('winner metrics.orders >= 3', (winnerInsight.metrics?.orders ?? 0) >= 3)
+ok('winner metrics.ordersTotal >= 3', (winnerInsight.metrics?.ordersTotal ?? 0) >= 3)
 
 // ── STEP 6: Autopilot Evaluation ────────────────────────────────────────────
 console.log('\n6. Autopilot Evaluator')

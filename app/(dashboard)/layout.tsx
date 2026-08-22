@@ -14,11 +14,14 @@ const bottomNav = [
 
 // Sidebar: full nav (desktop)
 const sidebarNav = [
+  { href: '/hoje', label: 'Hoje', icon: '📋', group: 'core' },
   { href: '/dashboard', label: 'Dashboard', icon: '🏠', group: 'core' },
+  { href: '/launch', label: 'Lançar Campanha', icon: '🚀', group: 'core' },
   { href: '/products', label: 'Produtos', icon: '🔍', group: 'core' },
   { href: '/queue', label: 'Fila', icon: '✅', group: 'core' },
   { href: '/video-factory', label: 'Vídeos', icon: '🎬', group: 'core' },
   { href: '/distribute', label: 'Distribuição', icon: '📡', group: 'publish' },
+  { href: '/connect', label: 'Conexões', icon: '🔗', group: 'publish' },
   { href: '/revenue', label: 'Receita', icon: '💰', group: 'analytics' },
   { href: '/notifications', label: 'Notificações', icon: '🔔', group: 'analytics' },
   { href: '/sales/import', label: 'Importar Vendas', icon: '📊', group: 'analytics' },

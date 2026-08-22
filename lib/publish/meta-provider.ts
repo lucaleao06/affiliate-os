@@ -1,117 +1,141 @@
 /**
- * MetaPublicationProvider — Instagram Reels via Meta Graph API.
+ * MetaPublicationProvider — Instagram Reels via Meta Graph API v21.0.
+ *
+ * Token source (priority):
+ *   1. platform_connections table (encrypted, set via /api/connect/meta OAuth)
+ *   2. Env fallback: META_ACCESS_TOKEN + META_IG_USER_ID (legacy / testing)
  *
  * API flow (3 steps):
- *   1. POST /{ig-user-id}/media  (media_type=REELS, video_url=<public_url>)
+ *   1. POST /{ig-user-id}/media  (media_type=REELS, video_url=<public HTTPS URL>)
  *   2. Poll /{container-id}?fields=status_code until FINISHED
  *   3. POST /{ig-user-id}/media_publish  (creation_id={container-id})
  *
- * Video upload uses rupload.facebook.com, not graph.facebook.com.
- *
- * Requirements (BLOCKER — needs human action):
- *   - Instagram Business/Creator account linked to a Facebook Page
- *   - Meta Developer App with instagram_basic, instagram_content_publish permissions
- *   - App Review approval for instagram_content_publish (for non-test users)
- *   - META_APP_ID, META_APP_SECRET, META_ACCESS_TOKEN env vars
- *   - IG_USER_ID env var (Instagram Business account ID)
- *
- * Sources: https://developers.facebook.com/docs/instagram-platform/content-publishing/
+ * BLOQUEIO HUMANO: user must complete OAuth at /connect before first publish.
+ * Docs: https://developers.facebook.com/docs/instagram-platform/content-publishing/
  */
 import type { PublicationProvider, PublicationChannel, PublicationPackage, PublishInput, PublishResult } from './types'
+
+const GRAPH = 'https://graph.facebook.com/v21.0'
+
+async function getMetaCredentials(): Promise<{ token: string; igUserId: string } | null> {
+  try {
+    const { createAdmin } = await import('@/lib/supabase/server')
+    const { decrypt } = await import('@/lib/crypto/token-encrypt')
+    const admin = createAdmin()
+    const { data } = await admin
+      .from('platform_connections')
+      .select('access_token_enc, platform_user_id, token_expires_at')
+      .eq('workspace_id', '00000000-0000-0000-0000-000000000001')
+      .eq('platform', 'instagram')
+      .maybeSingle()
+    if (!data?.access_token_enc || !data.platform_user_id) return null
+    if (data.token_expires_at && new Date(data.token_expires_at) < new Date()) return null
+    return { token: decrypt(data.access_token_enc), igUserId: data.platform_user_id }
+  } catch { return null }
+}
 
 export class MetaPublicationProvider implements PublicationProvider {
   readonly channel: PublicationChannel = 'instagram'
   readonly name = 'meta-instagram'
 
   isReady(): boolean {
-    return !!(
-      process.env.META_ACCESS_TOKEN &&
-      process.env.META_IG_USER_ID
-    )
+    // Sync check — uses env fallback only (DB check is async, call isReadyAsync for real check)
+    return !!(process.env.META_ACCESS_TOKEN && process.env.META_IG_USER_ID)
+  }
+
+  async isReadyAsync(): Promise<boolean> {
+    const creds = await getMetaCredentials()
+    if (creds) return true
+    return this.isReady()
   }
 
   validate(pkg: PublicationPackage): { valid: boolean; errors: string[] } {
     const errors: string[] = []
-    if (!pkg.checklist.hasVideo) errors.push('Sem vídeo')
-    if (!pkg.checklist.videoIsVertical) errors.push('Vídeo deve ser 9:16')
+    if (!pkg.checklist.hasVideo)        errors.push('Sem vídeo')
+    if (!pkg.checklist.videoIsVertical) errors.push('Vídeo deve ser 9:16 vertical')
     if (!pkg.checklist.videoMinDuration) errors.push('Mínimo 5 segundos')
     if (!pkg.checklist.videoMaxDuration) errors.push('Máximo 90 segundos para Reels')
-    if (!pkg.checklist.rightsCleared) errors.push('Direitos de mídia não declarados')
-    if (!pkg.downloadUrl.startsWith('https://')) errors.push('downloadUrl deve ser uma URL pública HTTPS (Meta exige)')
+    if (!pkg.checklist.rightsCleared)   errors.push('Direitos de mídia não declarados')
+    if (!pkg.downloadUrl.startsWith('https://')) {
+      errors.push('downloadUrl deve ser HTTPS público (Meta exige URL acessível)')
+    }
     return { valid: errors.length === 0, errors }
   }
 
   async publish(input: PublishInput): Promise<PublishResult> {
-    if (!this.isReady()) {
+    // Try DB creds first, fall back to env
+    const creds = await getMetaCredentials()
+    const token = creds?.token ?? process.env.META_ACCESS_TOKEN
+    const igUserId = creds?.igUserId ?? process.env.META_IG_USER_ID
+
+    if (!token || !igUserId) {
       return {
         success: false,
         requiresManualAction: true,
-        error: 'META_ACCESS_TOKEN ou META_IG_USER_ID não configurados',
-        manualInstructions: 'Configure META_ACCESS_TOKEN e META_IG_USER_ID nas env vars. Ver docs/PUBLISHING_RESEARCH.md.',
+        error: 'Instagram não conectado',
+        manualInstructions:
+          'Acesse /connect e clique em "Conectar Instagram".\n' +
+          'Você precisará de: conta Instagram Business ou Creator vinculada a uma Página do Facebook.\n' +
+          'Após conectar, o sistema publicará automaticamente.',
       }
     }
 
-    const token = process.env.META_ACCESS_TOKEN!
-    const igUserId = process.env.META_IG_USER_ID!
     const { pkg } = input
 
     try {
-      // Step 1: Create media container
-      const containerRes = await fetch(`https://graph.facebook.com/v19.0/${igUserId}/media`, {
+      // Step 1: Create Reels media container
+      const containerRes = await fetch(`${GRAPH}/${igUserId}/media`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           media_type: 'REELS',
           video_url: pkg.downloadUrl,
-          caption: `${pkg.caption}\n\n${pkg.cta}${pkg.affiliateUrl ? `\n${pkg.affiliateUrl}` : ''}`,
+          caption: [pkg.caption, pkg.cta, pkg.affiliateUrl].filter(Boolean).join('\n\n'),
           share_to_feed: true,
           access_token: token,
         }),
       })
       const containerData = await containerRes.json() as { id?: string; error?: { message: string } }
-      if (!containerRes.ok || !containerData.id) {
-        throw new Error(containerData.error?.message ?? 'Failed to create media container')
-      }
+      if (!containerData.id) throw new Error(containerData.error?.message ?? 'Failed to create media container')
       const containerId = containerData.id
 
-      // Step 2: Poll until FINISHED (max 10 attempts, 15s apart)
-      for (let attempt = 0; attempt < 10; attempt++) {
+      // Step 2: Poll status (max 10 × 15s = 150s)
+      let finished = false
+      for (let i = 0; i < 10; i++) {
         await new Promise(r => setTimeout(r, 15_000))
-        const statusRes = await fetch(
-          `https://graph.facebook.com/v19.0/${containerId}?fields=status_code&access_token=${token}`
-        )
+        const statusRes = await fetch(`${GRAPH}/${containerId}?fields=status_code&access_token=${token}`)
         const statusData = await statusRes.json() as { status_code?: string }
-        if (statusData.status_code === 'FINISHED') break
+        if (statusData.status_code === 'FINISHED') { finished = true; break }
         if (statusData.status_code === 'ERROR') throw new Error('Meta media processing failed')
-        // PUBLISHED or IN_PROGRESS — continue polling
+        // IN_PROGRESS — continue polling
       }
+      if (!finished) throw new Error('Media processing timeout after 150s')
 
       // Step 3: Publish
-      const publishRes = await fetch(`https://graph.facebook.com/v19.0/${igUserId}/media_publish`, {
+      const publishRes = await fetch(`${GRAPH}/${igUserId}/media_publish`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ creation_id: containerId, access_token: token }),
       })
       const publishData = await publishRes.json() as { id?: string; error?: { message: string } }
-      if (!publishRes.ok || !publishData.id) {
-        throw new Error(publishData.error?.message ?? 'Failed to publish media')
-      }
+      if (!publishData.id) throw new Error(publishData.error?.message ?? 'Failed to publish media')
 
       return {
         success: true,
         platformPostId: publishData.id,
-        publishedUrl: `https://www.instagram.com/p/${publishData.id}/`,
+        publishedUrl: `https://www.instagram.com/reel/${publishData.id}/`,
       }
     } catch (err) {
       return { success: false, error: String(err) }
     }
   }
 
-  async getStatus(platformPostId: string) {
-    const token = process.env.META_ACCESS_TOKEN
+  async getStatus(platformPostId: string): Promise<{ status: string; url?: string }> {
+    const creds = await getMetaCredentials()
+    const token = creds?.token ?? process.env.META_ACCESS_TOKEN
     if (!token) return { status: 'unknown' }
     try {
-      const res = await fetch(`https://graph.facebook.com/v19.0/${platformPostId}?fields=permalink&access_token=${token}`)
+      const res = await fetch(`${GRAPH}/${platformPostId}?fields=permalink&access_token=${token}`)
       const data = await res.json() as { permalink?: string }
       return { status: 'published', url: data.permalink }
     } catch { return { status: 'error' } }
