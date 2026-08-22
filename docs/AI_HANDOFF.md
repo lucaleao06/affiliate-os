@@ -1,11 +1,25 @@
-# AI_HANDOFF — Affiliate OS v0.2
+# AI_HANDOFF — Affiliate OS v0.3
 
 _Última atualização: 2026-08-22_
 
 ## Estado atual
-Pipeline completo: Produto → Score → Criativo → Aprovação → Storyboard → **MP4 renderizado** → **SRT captions** → **ContentPackage manifest**.
-Mobile-first + PWA: manifest, ícones, safe-areas, bottom nav, autopilot page.
-`npx tsc --noEmit` → exit 0. Commits: `2bbdca1` (PWA) · `f38706c` (TTS+captions) · `a072e43` (cleanup).
+Pipeline completo: Produto → Score → Criativo → Aprovação → Storyboard → **MP4 renderizado** → **SRT captions** → **ContentPackage** → **PublicationPackage** → **Distribution** → **Growth Analysis** → **Winner Detection** → **Autopilot Evaluation**.
+
+**Sprint 2 entregue:**
+- Migration 003 executada ✅ (5 tabelas no Supabase)
+- Growth Analyst + Winner Detector (`lib/growth/`)
+- Autopilot Evaluator real (`lib/autopilot/evaluator.ts`)
+- TrackingLinkBuilder — Shopee/Amazon preservados, outros recebem UTMs
+- CSV import robusto — parseNumber fix para `R$ 1.234,56`
+- Notificações reais: `render_completed` / `render_failed` / `winner_detected` / `import_completed`
+- Navegação atualizada: sidebar agrupada + bottom-nav ≤5 itens
+- `tsc --noEmit` → 0 erros. E2E V2: 41/41 ✅
+
+**Commits:** `2bbdca1` (PWA) · `f38706c` (TTS+captions) · `a072e43` (cleanup) · `f3d2674` (Sprint 1) · Sprint 2 pendente commit
+
+## Banco de dados — tabelas ativas (Supabase)
+`workspaces`, `products`, `product_scores`, `campaigns`, `creative_angles`, `creatives`, `automation_runs`, `publications` — Sprint 1
+`publication_packages`, `sales`, `autopilot_rules`, `notifications`, `import_batches` — Sprint 2 (migration 003)
 
 ## TTS
 - `lib/tts/types.ts` — TTSProvider interface

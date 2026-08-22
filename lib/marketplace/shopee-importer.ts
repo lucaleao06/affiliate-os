@@ -66,8 +66,34 @@ function normalizeKey(col: string): keyof ShopeeCSVRow | null {
 }
 
 function parseNumber(val: string): number {
-  // Handle "R$ 1.234,56" → 1234.56
-  return parseFloat(val.replace(/[^\d,.-]/g, '').replace(',', '.')) || 0
+  // Handle "R$ 1.234,56" (Brazilian: dot=thousands, comma=decimal) → 1234.56
+  // Handle "1234.56" (English) → 1234.56
+  // Remove currency symbols and whitespace
+  const stripped = val.replace(/[R$\s%]/g, '').trim()
+  if (!stripped) return 0
+
+  // If both dot and comma are present:
+  // "1.234,56" → dot before comma → dot is thousands, comma is decimal
+  const dotIdx = stripped.lastIndexOf('.')
+  const commaIdx = stripped.lastIndexOf(',')
+
+  if (dotIdx !== -1 && commaIdx !== -1) {
+    if (dotIdx < commaIdx) {
+      // Brazilian: remove dots (thousands), replace comma with dot
+      return parseFloat(stripped.replace(/\./g, '').replace(',', '.')) || 0
+    } else {
+      // English with thousands comma: remove commas, keep dot
+      return parseFloat(stripped.replace(/,/g, '')) || 0
+    }
+  }
+
+  // Only comma (no dot): could be decimal comma → treat as decimal
+  if (commaIdx !== -1 && dotIdx === -1) {
+    return parseFloat(stripped.replace(',', '.')) || 0
+  }
+
+  // Only dot or neither: standard parseFloat
+  return parseFloat(stripped) || 0
 }
 
 /** Parse CSV text into ShopeeCSVRow[]. Handles both comma and semicolon delimiters. */

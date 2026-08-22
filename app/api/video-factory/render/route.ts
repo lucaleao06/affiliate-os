@@ -99,6 +99,14 @@ export async function POST(req: NextRequest) {
     })
     try { saveContentPackage(pkg) } catch { /* non-fatal */ }
 
+    // Fire render_completed notification
+    await admin.from('notifications').insert({
+      event: 'render_completed',
+      title: 'Vídeo renderizado',
+      body: `${result.filename} — ${result.durationSec.toFixed(1)}s, ${(result.fileSizeBytes / 1024 / 1024).toFixed(1)} MB`,
+      data: { creativeId: body.creativeId, filename: result.filename, downloadUrl, packageReady: pkg.checklist.ready },
+    })
+
     // Update render job to completed
     await admin.from('automation_runs').update({
       status: 'completed',
@@ -139,6 +147,12 @@ export async function POST(req: NextRequest) {
         error: String(err),
       }).eq('id', runId)
     }
+    await admin.from('notifications').insert({
+      event: 'render_failed',
+      title: 'Falha na renderização',
+      body: String(err),
+      data: { creativeId: (await req.json().catch(() => ({}))).creativeId },
+    }).catch(() => { /* non-fatal */ })
     console.error('[video-factory/render]', err)
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }

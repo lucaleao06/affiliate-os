@@ -123,6 +123,126 @@ Substitui ffprobe por leitura dos bytes 4-7 do arquivo de saída (`ftyp` box).
 
 ---
 
+---
+
+## 2026-08-22 — Sprint CONTENT PACKAGE → PUBLICATION READY → PUBLICAÇÃO REAL → ANALYTICS
+
+### `lib/publish/types.ts` (CRIADO)
+Interface `PublicationProvider` + tipos `PublicationPackage`, `PublicationChecklist`, `RightsStatus`, `PublicationChannel`.
+
+### `lib/publish/checklist.ts` (CRIADO)
+`buildPublicationChecklist()` — 8 verificações: hasVideo, hasCaption, hasCTA, hasAffiliateUrl, videoIsVertical, videoMinDuration(≥5s), videoMaxDuration(≤90s), rightsCleared.
+
+### `lib/publish/manual-provider.ts` (CRIADO)
+Always-ready provider. Retorna `requiresManualAction: true` com passo-a-passo de publicação manual.
+
+### `lib/publish/meta-provider.ts` (CRIADO)
+Meta Graph API v19.0 — fluxo 3 etapas: criar container → polling até FINISHED → media_publish.
+Env: `META_ACCESS_TOKEN`, `META_IG_USER_ID`. **BLOQUEIO HUMANO:** OAuth.
+
+### `lib/publish/tiktok-provider.ts` (CRIADO)
+TikTok Content Posting API v2 — PULL_FROM_URL, polling de status.
+Env: `TIKTOK_ACCESS_TOKEN`. **BLOQUEIO HUMANO:** OAuth + auditoria de app.
+
+### `lib/publish/index.ts` (CRIADO)
+Factory `getProvider()`, `rightsGatePassed()`, `publish()` com rights gate + checklist gate antes de despachar.
+
+### `supabase/migrations/003_sales_publishing.sql` (CRIADO)
+Tables: `publication_packages`, `sales` (dedup `UNIQUE(order_id,platform)`), `autopilot_rules` (row padrão `00000000-...`), `notifications`, `import_batches`.
+
+### `lib/marketplace/shopee-importer.ts` (CRIADO)
+`parseShopeeCSV()` — normaliza 25+ variantes de colunas PT-BR/EN, semicolon/comma delimiter, `R$ 1.234,56` → float.
+
+### `app/api/notifications/route.ts` (CRIADO)
+GET/POST/PATCH — lista, cria, marca lida (individual ou readAll).
+
+### `app/api/publish/route.ts` (CRIADO)
+GET: lista pacotes. POST action=create: constrói pacote + checklist + notifica. POST action=publish: rights gate + provider dispatch + atualiza status.
+
+### `app/api/sales/import/route.ts` (CRIADO)
+GET: lista batches. POST: preview (sem salvar) ou import completo com dedup via UNIQUE index. Cria notification ao finalizar.
+
+### `app/api/revenue/route.ts` (CRIADO)
+GET ?period=today|7d|30d|all — comissão hoje, 7d, período, top 5 produtos/canais/criativos, status breakdown.
+
+### `app/api/autopilot/rules/route.ts` (CRIADO)
+GET/PATCH da row global de regras (`id = 00000000-...`). Whitelist de campos mutáveis.
+
+### `app/(dashboard)/distribute/page.tsx` (CRIADO)
+Página de distribuição mobile-first: cards expansíveis, checklist visual, PUBLICAR/COPIAR LEGENDA/DOWNLOAD/VER POST, filtro por status.
+
+### `app/(dashboard)/revenue/page.tsx` (CRIADO)
+Dashboard de receita: StatCards (hoje/7d/período/bruto), top produtos/canais/criativos, empty state com link para importar.
+
+### `app/(dashboard)/notifications/page.tsx` (CRIADO)
+Centro de notificações: ícone por evento, tempo relativo, mark-read por toque, mark-all-read.
+
+### `app/(dashboard)/sales/import/page.tsx` (CRIADO)
+Importador CSV em 3 etapas: drag-drop/selecionar → preview (colunas, total, 5 linhas) → confirmar → resultado (importados/ignorados/erros).
+
+### `docs/PUBLISHING_RESEARCH.md` (CRIADO)
+Referência Meta/TikTok/YouTube/Shopee — endpoints, fluxos, requisitos, status de implementação.
+
+### `docs/SHOPEE_RESEARCH.md` (CRIADO)
+Shopee Affiliate: sem API pública, só CSV export. Formato de colunas, status, deduplicação, limitações.
+
+### `scripts/e2e-vertical-test.ts` (CRIADO)
+Teste E2E em TypeScript: produto → score → creative → storyboard → captions SRT → render mock → PublicationPackage → checklist → rights gate → ManualPublicationProvider → resultado.
+
+---
+
+---
+
+## 2026-08-22 — Sprint 2: Growth, Autopilot, Tracking, Migration 003
+
+### `lib/growth/types.ts` (CRIADO)
+Tipos `GrowthInsight`, `InsightType`, `RecommendedAction`, `WinnerThresholds`, `GrowthReport`. Thresholds padrão: minOrders=3, minCommission=10, topPercentile=0.2.
+
+### `lib/growth/analyst.ts` (CRIADO)
+`runGrowthAnalysis()` — agrega vendas do Supabase por produto/creative/canal, compara períodos atual vs anterior, detecta winner/rising/falling/scale_now. SQL puro, sem ML.
+
+### `lib/growth/winner-detector.ts` (CRIADO)
+`detectAndNotifyWinners()` — filtra winners com confidence >= 0.65, deduplicação de 24h via tabela `notifications`, insere evento `winner_detected`.
+
+### `lib/growth/index.ts` (CRIADO)
+Re-exports de `analyst` + `winner-detector`.
+
+### `app/api/growth/insights/route.ts` (CRIADO)
+`GET /api/growth/insights?period=30&minOrders=3&minCommission=10&notify=1` — executa análise + winner detection.
+
+### `lib/autopilot/evaluator.ts` (CRIADO)
+`evaluateForAutopilot(candidate, rules, postsToday)` — gates: mode_paused, score, risk_score, rights_status, channel, commission_rate, checklist, daily_limit, provider_manual. SUPERVISED→queue_for_approval, AUTOPILOT+real provider→advance.
+
+### `app/api/autopilot/run/route.ts` (CRIADO)
+`POST /api/autopilot/run` — busca packages `status=ready`, avalia cada um, registra decisão em notification, avança quando permitido.
+
+### `lib/tracking/link-builder.ts` (CRIADO)
+`detectPlatform()`, `buildTrackingLink()`, `buildShopeeAttributionKey()`. PRESERVE_EXACT=['shopee','amazon']. Shopee nunca recebe UTMs — correlação por data/publicationId.
+
+### `app/(dashboard)/layout.tsx` (ATUALIZADO)
+Sidebar desktop agrupada (Core/Publicação/Analytics/Automação). Bottom-nav mobile ≤5 itens + sino 🔔 → /notifications.
+
+### `app/(dashboard)/mais/page.tsx` (CRIADO)
+Página mobile "Mais" com links: Produtos, Receita, Notificações, Importar Vendas, Autopilot.
+
+### `lib/marketplace/shopee-importer.ts` — `parseNumber()` (CORRIGIDO)
+Bug: `R$ 1.234,56` era parseado como `1.234`. Fix: detecta formato brasileiro (dot=milhar, comma=decimal) via posição relativa dos separadores.
+
+### `lib/marketplace/__tests__/shopee-importer.test.ts` (CRIADO)
+10 fixtures, 35 assertions. Cobre: PT-BR semicolons, ponto inglês, comissão vazia, duplicatas, cancelados, cabeçalho desconhecido, CSV vazio, R$ 1.234,56. 35/35 ✅
+
+### Migration 003 (EXECUTADO no Supabase)
+5 tabelas criadas via Management API: `publication_packages`, `sales` (UNIQUE idx_sales_order_dedup), `autopilot_rules` (row default 00000000...), `notifications`, `import_batches`.
+Estratégia: browser session token → `api.supabase.com/v1/projects/{ref}/database/query`.
+
+### `app/api/video-factory/render/route.ts` (ATUALIZADO)
+Eventos reais: insere `render_completed` + `render_failed` em `notifications` ao fim de cada render.
+
+### `scripts/e2e-v2-decision-engine.ts` (CRIADO)
+41 assertions. Cobre: TrackingLinkBuilder (Shopee preservado, Hotmart UTMs), CSV import, PublicationChecklist, ManualProvider, GrowthInsight mock, Autopilot gates (SUPERVISED/AUTOPILOT/PAUSED/low score/daily limit). 41/41 ✅
+
+---
+
 ## Notas de design
 
 - Nenhuma cor foi introduzida além de `#FF6B35` (brand), verde/amarelo/vermelho de status (padrão semântico) e roxo para Autopilot
