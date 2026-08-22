@@ -5,6 +5,48 @@ Cada entrada tem: data · arquivo · motivo._
 
 ---
 
+## 2026-08-22 — TTS + Captions + Content Package
+
+### `lib/tts/types.ts` (CRIADO)
+Interface `TTSProvider` + `TTSInput` / `TTSOutput`. Mesmo padrão de `lib/ai/types.ts`.
+**Motivo:** abstração que permite trocar ElevenLabs por outra voz sem alterar o pipeline.
+
+### `lib/tts/no-voice-provider.ts` (CRIADO)
+`NoVoiceProvider` — retorna `audioPath: null`. Fallback always-available, vídeo fica silencioso.
+**Motivo:** pipeline deve funcionar sem chave TTS. Silêncio é preferível a crash.
+
+### `lib/tts/elevenlabs-provider.ts` (CRIADO)
+Provider real: chama `api.elevenlabs.io/v1/text-to-speech`, salva MP3 em `storage/tts/`.
+Ativo apenas quando `ELEVENLABS_API_KEY` está configurada.
+**Débito técnico:** não testado end-to-end — requer chave e crédito. Registrado em AI_HANDOFF.md.
+
+### `lib/tts/index.ts` (CRIADO)
+Factory `getTTSProvider()`: ElevenLabs se env configurada, NoVoice caso contrário.
+
+### `lib/render/captions.ts` (CRIADO)
+- `buildCaptions(storyboard)` — converte `StoryboardScene[]` em `CaptionEntry[]` com timestamps cumulativos
+- `parseDuration()` — aceita "3s", "00:00:03", "3" 
+- `toSRT(entries)` — formato SRT padrão (`00:00:03,000 --> 00:00:06,000`)
+- `saveCaptions(storyboard, outputPath)` — salva `.srt` + `.captions.json` ao lado do `.mp4`
+- `saveCaptionsStandalone(storyboard, runId)` — para uso sem renderização
+**Motivo:** TikTok/Reels exigem legenda sincronizada para melhor alcance.
+
+### `lib/render/content-package.ts` (CRIADO)
+`ContentPackage` — manifesto de tudo que sai de uma renderização:
+- `videoPath`, `downloadUrl`, `srtPath`, `captionsJsonPath`
+- `caption` (texto para rede social), `cta`, `affiliateUrl`
+- `channel: PublicationChannel` (instagram | tiktok | youtube_shorts)
+- `checklist: PublicationChecklist` — 8 verificações, `ready: boolean`
+`saveContentPackage()` — salva `.package.json` ao lado do `.mp4`.
+**Motivo:** "publication-ready" requer checklist explícito antes de publicar.
+
+### `app/api/video-factory/render/route.ts` (MODIFICADO)
+Após renderização, gera automaticamente: captions SRT + JSON e content package manifest.
+Retorna `captions` e `package.checklist` na resposta da API.
+**Motivo:** completar pipeline produto → vídeo → publicável sem etapas manuais extras.
+
+---
+
 ## 2026-08-22 — Sprint Mobile-first + PWA
 
 ### `public/manifest.json` (CRIADO)

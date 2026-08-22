@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdmin } from '@/lib/supabase/server'
 import { renderVideo } from '@/lib/render/ffmpeg'
+import { saveCaptions } from '@/lib/render/captions'
+import { buildContentPackage, saveContentPackage } from '@/lib/render/content-package'
 import type { StoryboardOutput } from '@/lib/ai'
 
 export const dynamic = 'force-dynamic'
@@ -62,6 +64,40 @@ export async function POST(req: NextRequest) {
     })
 
     const durationMs = Date.now() - startedAt
+    const downloadUrl = `/api/video-factory/output/${result.filename}`
+
+    // Generate captions alongside the MP4
+    let srtPath: string | null = null
+    let captionsJsonPath: string | null = null
+    try {
+      const caps = saveCaptions(storyboard, result.outputPath)
+      srtPath = caps.srtPath
+      captionsJsonPath = caps.jsonPath
+    } catch (capErr) {
+      console.warn('[video-factory/render] captions generation failed (non-fatal):', capErr)
+    }
+
+    // Build content package manifest
+    const pkg = buildContentPackage({
+      runId: runId ?? `render_${Date.now()}`,
+      creativeId: body.creativeId,
+      productId: (product?.id as string | undefined) ?? '',
+      videoPath: result.outputPath,
+      videoFilename: result.filename,
+      downloadUrl,
+      srtPath,
+      captionsJsonPath,
+      caption: (creative.caption as string | null) ?? '',
+      cta: (creative.cta as string | null) ?? '',
+      affiliateUrl: (product?.affiliate_url as string | null) ?? null,
+      channel: 'instagram',
+      durationSec: result.durationSec,
+      fileSizeBytes: result.fileSizeBytes,
+      width: result.width,
+      height: result.height,
+      codec: result.codec,
+    })
+    try { saveContentPackage(pkg) } catch { /* non-fatal */ }
 
     // Update render job to completed
     await admin.from('automation_runs').update({
@@ -75,7 +111,9 @@ export async function POST(req: NextRequest) {
         height: result.height,
         codec: result.codec,
         fileSizeBytes: result.fileSizeBytes,
-        downloadUrl: `/api/video-factory/output/${result.filename}`,
+        downloadUrl,
+        srtPath,
+        packageReady: pkg.checklist.ready,
       },
     }).eq('id', runId!)
 
@@ -83,13 +121,15 @@ export async function POST(req: NextRequest) {
       status: 'completed',
       runId,
       filename: result.filename,
-      downloadUrl: `/api/video-factory/output/${result.filename}`,
+      downloadUrl,
       durationSec: result.durationSec,
       width: result.width,
       height: result.height,
       codec: result.codec,
       fileSizeBytes: result.fileSizeBytes,
       renderMs: durationMs,
+      captions: { srtPath, captionsJsonPath },
+      package: { checklist: pkg.checklist },
     })
   } catch (err) {
     if (runId) {
