@@ -4,6 +4,26 @@ Registro de escolhas não-óbvias feitas durante o desenvolvimento. Cada decisã
 
 ---
 
+## [2026-08] Produto próprio — reutilizar tabela `products` com discriminador marketplace
+
+**Decisão:** Produtos próprios (e-books, cursos, templates) entram na mesma tabela `products` com `marketplace = 'owned'` e `product_type = 'owned'`. Não foi criada uma tabela separada.
+
+**Alternativas descartadas:**
+- Tabela `owned_products` separada → duplicaria toda a lógica de score, criativo, storyboard, render e publicação
+- Campo booleano `is_owned` → menos expressivo; `marketplace` já distingue a origem do produto
+
+**Justificativa:** O pipeline (score → creative → storyboard → render → publication_ready) opera sobre `products` sem diferenciação. Owned products entram no mesmo loop com `commission_rate = 100` e `affiliate_url = checkout_url`. Migration 005 adiciona as 4 colunas extras sem quebrar Shopee (defaults conservadores).
+
+---
+
+## [2026-08] checkout_url obrigatório para owned, affiliate_url para Shopee
+
+**Decisão:** Para `product_type = 'owned'`, `checkout_url` é obrigatório e validado via `validUrl()`. Para Shopee/afiliados, `affiliateUrl` é o campo equivalente. O pipeline usa `affiliate_url` da tabela — ao salvar owned products, `checkout_url` é gravado também em `affiliate_url`.
+
+**Justificativa:** Preserva compatibilidade: todos os consumers do pipeline leem `affiliate_url` sem saber o tipo do produto.
+
+---
+
 ## [2026-08] Extensão Chrome — token local em vez de OAuth
 
 **Decisão:** A extensão Chrome usa um token aleatório gerado localmente (`Math.random().toString(36)`), sincronizado manualmente pelo usuário via `.env.local`.

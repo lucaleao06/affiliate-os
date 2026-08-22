@@ -2,7 +2,60 @@
 
 > **Visão estratégica permanente do projeto:** ver `docs/PROJECT_VISION.md`.
 
-_Última atualização: 2026-08-22 (Sprint 4 Sessão 2 — revisão Codex)_
+_Última atualização: 2026-08-22 (Sprint 7 — owned products ponta a ponta)_
+
+## Sprints 5–7 (2026-08-22)
+
+### O que foi entregue
+
+**Sprint 5 — Color audit + CSS vars:**
+- 5 páginas migradas para variáveis CSS: `var(--bg)=#0d0d1a`, `var(--surface)`, `var(--surface-2)`, `var(--border)`, `var(--brand)=#FF6B35`
+- Nenhum hex hardcoded restante nas páginas auditadas
+
+**Sprint 6 — Owned products + migration:**
+- `supabase/005_owned_products.sql` criado (NÃO APLICADO — requer ação humana)
+- `/products/add-own` criado: formulário para cadastrar produto próprio
+- Sidebar e `/mais` atualizados com link para Produto Próprio
+- Commit scripts Sprint 5/6 em `~/Desktop/`
+
+**Sprint 7 — API + UX + badge + testes:**
+- `app/api/products/route.ts` reescrito: POST persiste `product_type`, `cost`, `checkout_url`, `margin_pct`, `marketplace`; PATCH novo; validações `validMoney()` + `validUrl()` sem vazar dados; graceful 409 se migration 005 ausente; regressão Shopee zero
+- `/products/add-own` redesign UX: touch ≥44px, margem em tempo real colorida, focus ring laranja, tela migration graceful, sucesso → /launch
+- `/products` lista: badge PRÓPRIO laranja quando `marketplace === 'owned'`
+- `scripts/test-owned-product.sh`: 6 testes (owned válido, validações, regressão Shopee, score, listagem)
+- Commit script Sprint 7 em `~/Desktop/`
+- Lint clean, tsc 0 erros
+
+### Pipeline owned products — status
+
+| Etapa | Status |
+|---|---|
+| Adicionar produto próprio (`/products/add-own`) | ✅ funcional (requer migration 005) |
+| Score (`/api/score`) | ✅ sem alteração — lê campos existentes |
+| Criativo (`/api/creative`) | ✅ usa title/description/price |
+| Storyboard + Render | ✅ usa creative, não acessa product_type |
+| Publication Package | ✅ usa affiliate_url (= checkout_url para owned) |
+
+### Banco — migration 005 pendente
+
+Adiciona 4 colunas à tabela `products`:
+```
+product_type  text NOT NULL DEFAULT 'affiliate' CHECK (IN ('affiliate','owned'))
+cost          numeric(10,2)
+checkout_url  text
+margin_pct    numeric(5,2)
+```
+Arquivo: `supabase/005_owned_products.sql` — **NÃO EXECUTAR sem confirmação do Luca**
+
+### Bloqueios humanos (Sprint 7)
+1. Executar `supabase/005_owned_products.sql` no SQL Editor do Supabase
+2. Rodar `~/Desktop/affiliate-os-sprint5-commit.command`
+3. Rodar `~/Desktop/affiliate-os-sprint6-commit.command`
+4. Rodar `~/Desktop/affiliate-os-sprint7-commit.command`
+5. `npm run dev` → `bash scripts/test-owned-product.sh`
+6. Extensão Chrome em `extension/` — carregar em `chrome://extensions` > Modo desenvolvedor > Carregar sem compactação
+
+---
 
 ## Correções Sprint 4 (Sessão 2)
 - **Contratos reais documentados:** `/api/score` retorna `score.overallScore` (camelCase); `/api/video-factory` aceita `creativeId`; fila é `PATCH /api/queue {id, status}`; publicação é `POST /api/publish {action: 'create'|'publish'}`

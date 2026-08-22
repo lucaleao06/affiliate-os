@@ -29,6 +29,7 @@ interface Product {
   sold_count: number
   category: string | null
   url: string | null
+  marketplace: string | null
   created_at: string
   product_scores: ProductScore[]
 }
@@ -414,7 +415,15 @@ export default function ProductsPage() {
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-medium text-white text-sm leading-snug line-clamp-2">{product.title}</h3>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-white text-sm leading-snug line-clamp-2">{product.title}</h3>
+                        {product.marketplace === 'owned' && (
+                          <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded font-bold tracking-wide"
+                            style={{ background: 'rgba(255,107,53,0.18)', color: 'var(--brand)', border: '1px solid rgba(255,107,53,0.3)' }}>
+                            PRÓPRIO
+                          </span>
+                        )}
+                      </div>
                       {score && (
                         <div className={`flex-shrink-0 text-xs px-2 py-1 rounded-lg border font-bold ${REC_COLOR[score.recommendation] ?? 'bg-gray-700 text-gray-300'}`}>
                           {score.overall_score}
