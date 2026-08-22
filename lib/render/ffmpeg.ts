@@ -251,23 +251,55 @@ export async function renderVideo(opts: RenderOptions): Promise<RenderResult> {
   // Cleanup temp image
   if (imagePath) { try { fs.unlinkSync(imagePath) } catch { /* ignore */ } }
 
-  // Validate MP4 container without ffprobe (which has no arm64 macOS binary).
-  // Read first 8 bytes: bytes 4-7 must be "ftyp" for a valid ISO Base Media file.
+  // Validate MP4 — try real ffprobe first (arm64 if available), fallback to ftyp box check.
   const stat = fs.statSync(outputPath)
   if (stat.size < 8) throw new Error('ffmpeg produced an empty output file')
-  const header = Buffer.alloc(8)
-  const fd = fs.openSync(outputPath, 'r')
-  try { fs.readSync(fd, header, 0, 8, 0) } finally { fs.closeSync(fd) }
-  const boxType = header.slice(4, 8).toString('ascii')
-  if (boxType !== 'ftyp') throw new Error(`Output is not a valid MP4 container (got box type: "${boxType}")`)
+
+  let probedDuration: number | null = null
+  let probedWidth: number | null = null
+  let probedHeight: number | null = null
+  let probedCodec: string | null = null
+  let ffprobeUsed = false
+
+  // Try real ffprobe from bin/ (arm64 from evermeet.cx if setup was run after the fix)
+  const ffprobeCandidate = findBinary(FFPROBE_PATHS)
+  try {
+    const probeOut = execSync(
+      `${shellEscape(ffprobeCandidate)} -v error -select_streams v:0 -show_entries stream=codec_name,width,height,duration -of json ${shellEscape(outputPath)}`,
+      { stdio: 'pipe', timeout: 10_000, encoding: 'utf8' }
+    )
+    const probeJson = JSON.parse(probeOut) as { streams?: { codec_name?: string; width?: number; height?: number; duration?: string }[] }
+    const stream = probeJson.streams?.[0]
+    if (stream) {
+      probedCodec = stream.codec_name ?? null
+      probedWidth = stream.width ?? null
+      probedHeight = stream.height ?? null
+      probedDuration = stream.duration ? parseFloat(stream.duration) : null
+      ffprobeUsed = true
+    }
+  } catch {
+    // ffprobe not available or failed — use ftyp fallback
+    const header = Buffer.alloc(8)
+    const fd = fs.openSync(outputPath, 'r')
+    try { fs.readSync(fd, header, 0, 8, 0) } finally { fs.closeSync(fd) }
+    const boxType = header.slice(4, 8).toString('ascii')
+    if (boxType !== 'ftyp') throw new Error(`Output is not a valid MP4 container (got box type: "${boxType}")`)
+    // Spec is enforced by ffmpegArgs above — safe to use fixed values
+    probedWidth = W; probedHeight = H; probedCodec = 'h264'
+  }
+
+  if (!ffprobeUsed) {
+    // ftyp path: log as debt so we know which renders didn't get real probing
+    console.info('[renderVideo] ffprobe unavailable — using ftyp validation + fixed spec (debt: arm64 ffprobe)')
+  }
 
   return {
     outputPath,
     filename: opts.outputFilename,
-    durationSec: totalDuration,
-    width: W,
-    height: H,
-    codec: 'h264',
+    durationSec: probedDuration ?? totalDuration,
+    width: probedWidth ?? W,
+    height: probedHeight ?? H,
+    codec: probedCodec ?? 'h264',
     fileSizeBytes: stat.size,
   }
 }

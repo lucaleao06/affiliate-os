@@ -97,8 +97,27 @@ export async function POST(req: NextRequest) {
     if (!fs.existsSync(ffmpegNpm)) throw new Error(`ffmpeg-static binary not found at ${ffmpegNpm}`)
     execSync(`cp "${ffmpegNpm}" "${binDir}/ffmpeg" && chmod +x "${binDir}/ffmpeg"`)
 
+    // Try npm ffprobe-static first, fallback to evermeet.cx arm64 static build
     const fp = fs.existsSync(ffprobeNpm1) ? ffprobeNpm1 : ffprobeNpm2
-    if (fp) execSync(`cp "${fp}" "${binDir}/ffprobe" && chmod +x "${binDir}/ffprobe"`)
+    if (fp) {
+      execSync(`cp "${fp}" "${binDir}/ffprobe" && chmod +x "${binDir}/ffprobe"`)
+      // Test if it actually runs (ffprobe-static npm has no arm64 macOS binary)
+      const fpWorks = (() => { try { execSync(`"${ffprobeBin}" -version`, { stdio: 'pipe', timeout: 5_000 }); return true } catch { return false } })()
+      if (!fpWorks && arch === 'arm64') {
+        // Download arm64 macOS ffprobe from evermeet.cx (static build, no Homebrew required)
+        try {
+          execSync(
+            `curl -L "https://evermeet.cx/ffmpeg/getrelease/ffprobe/zip" -o /tmp/ffprobe_arm64.zip && ` +
+            `unzip -o /tmp/ffprobe_arm64.zip -d /tmp/ffprobe_arm64 && ` +
+            `cp /tmp/ffprobe_arm64/ffprobe "${ffprobeBin}" && chmod +x "${ffprobeBin}" && ` +
+            `rm -rf /tmp/ffprobe_arm64.zip /tmp/ffprobe_arm64`,
+            { timeout: 120_000, stdio: 'pipe' }
+          )
+          // Clear Gatekeeper quarantine + ad-hoc sign
+          execSync(`xattr -d com.apple.quarantine "${ffprobeBin}" 2>/dev/null || true && codesign -s - -f "${ffprobeBin}" 2>/dev/null || true`, { stdio: 'pipe' })
+        } catch { /* non-fatal — ftyp fallback remains in renderVideo */ }
+      }
+    }
 
     // Cleanup
     try { execSync(`rm -rf "${tmpDir}"`) } catch { /* best-effort */ }
