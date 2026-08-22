@@ -1,25 +1,33 @@
-# AI_HANDOFF — Affiliate OS v0.3
+# AI_HANDOFF — Affiliate OS v0.4
 
 _Última atualização: 2026-08-22_
 
 ## Estado atual
-Pipeline completo: Produto → Score → Criativo → Aprovação → Storyboard → **MP4 renderizado** → **SRT captions** → **ContentPackage** → **PublicationPackage** → **Distribution** → **Growth Analysis** → **Winner Detection** → **Autopilot Evaluation**.
+Pipeline completo: Produto → Score → Criativo → Aprovação → Storyboard → **MP4 renderizado** → **SRT captions** → **ContentPackage** → **PublicationPackage** → **Distribution** → **Growth Analysis** → **Winner Detection** → **Autopilot Evaluation** → **Publicação Real (IG/YouTube)**.
 
-**Sprint 2 entregue:**
-- Migration 003 executada ✅ (5 tabelas no Supabase)
-- Growth Analyst + Winner Detector (`lib/growth/`)
-- Autopilot Evaluator real (`lib/autopilot/evaluator.ts`)
-- TrackingLinkBuilder — Shopee/Amazon preservados, outros recebem UTMs
-- CSV import robusto — parseNumber fix para `R$ 1.234,56`
-- Notificações reais: `render_completed` / `render_failed` / `winner_detected` / `import_completed`
-- Navegação atualizada: sidebar agrupada + bottom-nav ≤5 itens
+**Sprint 3 entregue:**
+- Migration 004 executada ✅ (`platform_connections` + SUPERVISED default)
+- AES-256-GCM token storage (`lib/crypto/token-encrypt.ts`)
+- Meta OAuth completo: redirect → callback → long-lived token → IG Business account discovery → DB encrypted storage (`app/api/connect/meta/`)
+- YouTube OAuth completo: redirect → callback → channel discovery → auto-refresh token (`app/api/connect/youtube/`)
+- MetaProvider v2: lê credenciais do DB, fallback env vars, `requiresManualAction` se nenhum disponível
+- YouTubeProvider: upload resumável Shorts, auto-refresh, poll status
+- Página `/connect` — status Instagram/YouTube/TikTok(EM BREVE)/Shopee(MANUAL)
+- Wizard "LANÇAR CAMPANHA" (`/launch`) — 6 etapas em página única
+- Página "Hoje" (`/hoje`) — visão diária: renders, aprovações, vendas, winners, erros
+- Autopilot default: SUPERVISED (era PAUSED)
 - `tsc --noEmit` → 0 erros. E2E V2: 41/41 ✅
 
-**Commits:** `2bbdca1` (PWA) · `f38706c` (TTS+captions) · `a072e43` (cleanup) · `f3d2674` (Sprint 1) · Sprint 2 pendente commit
+**BLOQUEIOS HUMANOS PENDENTES:**
+- Meta: configurar `META_APP_ID`, `META_APP_SECRET`, `ENCRYPTION_KEY` em `.env.local`, depois acessar `/connect` e fazer OAuth
+- YouTube: configurar `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` em `.env.local`, depois OAuth
+
+**Commits:** Sprint 3 commitado via `affiliate-os-sprint3-commit.command`
 
 ## Banco de dados — tabelas ativas (Supabase)
 `workspaces`, `products`, `product_scores`, `campaigns`, `creative_angles`, `creatives`, `automation_runs`, `publications` — Sprint 1
 `publication_packages`, `sales`, `autopilot_rules`, `notifications`, `import_batches` — Sprint 2 (migration 003)
+`platform_connections` — Sprint 3 (migration 004) — tokens OAuth criptografados AES-256-GCM
 
 ## TTS
 - `lib/tts/types.ts` — TTSProvider interface

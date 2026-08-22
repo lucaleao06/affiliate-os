@@ -243,6 +243,61 @@ Eventos reais: insere `render_completed` + `render_failed` em `notifications` ao
 
 ---
 
+---
+
+## 2026-08-22 — Sprint 3: Conexões Reais + Primeiro Loop de Produção
+
+### `lib/crypto/token-encrypt.ts` (CRIADO)
+AES-256-GCM encrypt/decrypt para tokens OAuth. Key de `ENCRYPTION_KEY` (64 hex chars = 32 bytes). Formato: `ivHex:tagHex:ciphertextHex`. Nunca loga chave ou plaintext.
+
+### `supabase/migrations/004_platform_connections.sql` (CRIADO — EXECUTADO)
+Tabela `platform_connections`: workspace_id, platform, access_token_enc, refresh_token_enc, token_expires_at, platform_user_id, platform_username, scopes[], raw_meta. UNIQUE(workspace_id, platform). Trigger auto-update timestamp.
+Migration também atualiza `autopilot_rules` default mode de PAUSED → SUPERVISED.
+
+### `app/api/connect/meta/route.ts` (CRIADO)
+GET → gera CSRF state, salva temporariamente em `platform_connections`, redireciona para `facebook.com/v21.0/dialog/oauth` com scopes IG.
+
+### `app/api/connect/meta/callback/route.ts` (CRIADO)
+5 etapas: verifica CSRF → exchange code → long-lived token (60d) → lista Pages FB → descoberta do IG Business account ID → upsert criptografado em `platform_connections`. Nunca loga appSecret.
+
+### `app/api/connect/meta/status/route.ts` (CRIADO)
+GET força-dinâmico → retorna `{connected, expired, username, userId, expiresAt, scopes}`.
+
+### `app/api/connect/youtube/route.ts` (CRIADO)
+GET → CSRF state + redirect para Google OAuth com scopes `youtube.upload` + `youtube.readonly`, `access_type=offline`, `prompt=consent`.
+
+### `app/api/connect/youtube/callback/route.ts` (CRIADO)
+Verifica CSRF, exchange code → access_token + refresh_token, descobre channelId via `googleapis.com/youtube/v3/channels`, encrypta e salva.
+
+### `app/api/connect/youtube/status/route.ts` (CRIADO)
+Retorna `{connected, expired, channelId, channelTitle, expiresAt}`.
+
+### `app/(dashboard)/connect/page.tsx` (CRIADO)
+Página `/connect`: polling de status Instagram e YouTube no mount. Cards com status badge (Conectado/Desconectado/Expirado). TikTok: EM BREVE. Shopee: MANUAL ✓.
+
+### `lib/publish/meta-provider.ts` (ATUALIZADO — v2)
+`getMetaCredentials()` lê credenciais do DB (platform_connections) com fallback para env vars. `isReadyAsync()` verifica DB. `publish()` tenta DB primeiro, fallback env, caso contrário retorna `requiresManualAction: true` com instruções. API atualizada para v21.0.
+
+### `lib/publish/youtube-provider.ts` (CRIADO)
+Auto-refresh: verifica expiração com buffer 60s, faz refresh via `oauth2.googleapis.com/token`, atualiza DB. Upload resumável para Shorts (max 60s). Retorna `publishedUrl: https://www.youtube.com/shorts/{id}`.
+
+### `app/api/hoje/route.ts` (CRIADO)
+GET força-dinâmico: agrega renders do dia, criativos pendentes, publicados, vendas hoje, notificações 24h, modo autopilot. Segmenta: errors (render_failed/publish_failed) e winners (winner_detected).
+
+### `app/(dashboard)/hoje/page.tsx` (CRIADO)
+Página `/hoje`: data + modo autopilot, card de vendas (laranja), 4 stat cards, seção winners (amarelo), preview de aprovações pendentes → /queue, seção erros (vermelho), CTA LANÇAR CAMPANHA.
+
+### `app/(dashboard)/launch/page.tsx` (CRIADO)
+Wizard 6 etapas em página única (useState — sem navegação multi-tela): produto → score → criativo (escolha entre 3) → storyboard → render → distribuição (canal + publicar). Breadcrumb + progress bar.
+
+### `app/(dashboard)/layout.tsx` (ATUALIZADO)
+Adicionados ao sidebarNav: Hoje, Lançar Campanha (group=core), Conexões (group=publish).
+
+### `app/(dashboard)/mais/page.tsx` (ATUALIZADO)
+Links: Hoje, Lançar Campanha, Conexões. CSS vars `var(--surface)` / `var(--border)`.
+
+---
+
 ## Notas de design
 
 - Nenhuma cor foi introduzida além de `#FF6B35` (brand), verde/amarelo/vermelho de status (padrão semântico) e roxo para Autopilot
