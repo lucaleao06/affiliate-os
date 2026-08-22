@@ -35,10 +35,10 @@ function fmt(n: number) {
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
-      <p className="text-xs text-gray-500 mb-1">{label}</p>
+    <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+      <p className="text-xs mb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>{label}</p>
       <p className="text-2xl font-bold text-white">{value}</p>
-      {sub && <p className="text-xs text-gray-600 mt-0.5">{sub}</p>}
+      {sub && <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.25)' }}>{sub}</p>}
     </div>
   )
 }
@@ -56,7 +56,7 @@ export default function RevenuePage() {
   }, [period])
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen text-white" style={{ background: 'var(--bg)' }}>
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-bold">Receita</h1>
@@ -76,13 +76,22 @@ export default function RevenuePage() {
         </div>
 
         {loading ? (
-          <div className="text-center text-gray-500 py-20">Carregando...</div>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              {[0,1,2,3].map(i => <div key={i} className="h-20 rounded-xl animate-pulse bg-gray-900 border border-gray-800" />)}
+            </div>
+            {[0,1].map(i => <div key={i} className="h-28 rounded-xl animate-pulse bg-gray-900 border border-gray-800" />)}
+          </div>
         ) : !data || data.isEmpty ? (
           <div className="text-center py-20">
             <div className="text-4xl mb-3">📊</div>
             <p className="text-gray-400 text-sm">Nenhuma venda importada ainda.</p>
             <p className="text-gray-600 text-xs mt-1">Importe um relatório CSV do Shopee Affiliate para ver sua receita.</p>
-            <a href="/sales/import" className="inline-block mt-4 text-xs text-blue-400 hover:underline">
+            <a
+              href="/sales/import"
+              className="inline-flex min-h-11 items-center rounded-xl px-4 text-xs font-bold transition-opacity hover:opacity-90"
+              style={{ background: 'rgba(255,107,53,0.14)', color: 'var(--brand)', border: '1px solid rgba(255,107,53,0.24)' }}
+            >
               Importar relatório →
             </a>
           </div>
@@ -106,8 +115,8 @@ export default function RevenuePage() {
 
             {/* Status breakdown */}
             {Object.keys(data.statusBreakdown).length > 0 && (
-              <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
-                <p className="text-xs text-gray-500 mb-3 uppercase tracking-wide">Status dos pedidos</p>
+              <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <p className="text-xs mb-3 uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>Status dos pedidos</p>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(data.statusBreakdown).map(([st, count]) => (
                     <span key={st} className="text-xs px-3 py-1 rounded-full bg-gray-800 text-gray-300">
@@ -120,8 +129,8 @@ export default function RevenuePage() {
 
             {/* Top products */}
             {data.topProducts.length > 0 && (
-              <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
-                <p className="text-xs text-gray-500 mb-3 uppercase tracking-wide">🏆 Produtos top</p>
+              <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <p className="text-xs mb-3 uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>🏆 Produtos top</p>
                 <div className="space-y-2">
                   {data.topProducts.map((p, i) => (
                     <div key={p.id ?? i} className="flex items-center justify-between">
@@ -141,8 +150,8 @@ export default function RevenuePage() {
 
             {/* Top channels */}
             {data.topChannels.length > 0 && (
-              <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
-                <p className="text-xs text-gray-500 mb-3 uppercase tracking-wide">📡 Canal top</p>
+              <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <p className="text-xs mb-3 uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>📡 Canal top</p>
                 <div className="space-y-2">
                   {data.topChannels.map((c, i) => (
                     <div key={c.channel ?? i} className="flex items-center justify-between">
@@ -162,8 +171,8 @@ export default function RevenuePage() {
 
             {/* Top creatives */}
             {data.topCreatives.length > 0 && (
-              <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
-                <p className="text-xs text-gray-500 mb-3 uppercase tracking-wide">🎬 Criativo top</p>
+              <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <p className="text-xs mb-3 uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>🎬 Criativo top</p>
                 <div className="space-y-2">
                   {data.topCreatives.map((c, i) => (
                     <div key={c.creativeId ?? i} className="flex items-center justify-between">

@@ -5,6 +5,46 @@ Cada entrada tem: data · arquivo · motivo._
 
 ---
 
+## 2026-08-22 — Sprint 5: Growth, Autopilot backend, Skeletons
+
+### `app/(dashboard)/growth/page.tsx` (CRIADO)
+Página Growth Insights mobile-first. Busca `/api/growth/insights?period=N`. Skeleton durante load, empty state honesto com CTAs para importar CSV e adicionar produtos. Insights agrupados em positivos/negativos. `InsightCard` com badge de tipo, trend %, razão, métricas, CTA de ação.
+**Motivo:** Sprint 5 — página de análise de winners/losers real, conectada à API existente.
+
+### `app/(dashboard)/autopilot/page.tsx` (REESCRITO)
+Conectado ao `/api/autopilot/rules` real (GET ao montar, PATCH ao salvar). Mostra badge ATIVO no modo salvo no banco. AUTOPILOT marcado EM BREVE (live:false). Regras só visíveis em modos não-PAUSED. Skeleton enquanto carrega.
+**Motivo:** Sprint 5 — UI conectada ao backend, honest sobre o que está disponível.
+
+### `app/(dashboard)/layout.tsx` (ATUALIZADO)
+Adicionado `/growth` na sidebar no grupo 'analytics'.
+**Motivo:** Acessibilidade à nova página via nav lateral.
+
+### `app/(dashboard)/mais/page.tsx` (ATUALIZADO)
+Adicionado `/growth` no menu mobile.
+**Motivo:** Acessibilidade mobile à nova página.
+
+### `app/(dashboard)/dashboard/page.tsx` (ATUALIZADO)
+Skeleton nos stat cards durante load. Cards 2x2 Growth + Autopilot em substituição ao promo antigo.
+**Motivo:** Sprint 5 — skeleton + quick-access às páginas principais.
+
+### `app/(dashboard)/hoje/page.tsx` (ATUALIZADO)
+Skeleton layout durante load: banner hero + grid 2x2 + 2 cards list.
+**Motivo:** Sprint 5 — skeleton elimina "Carregando..." genérico.
+
+### `app/(dashboard)/revenue/page.tsx` (ATUALIZADO)
+Skeleton grid 2x2 + 2 cards de conteúdo durante load.
+**Motivo:** Sprint 5 — skeleton consistente com o restante da app.
+
+### `app/(dashboard)/distribute/page.tsx` (ATUALIZADO)
+Skeleton 3 cards estilo vídeo-thumb durante load. Fix: `load()` retorna `Promise<PublicationPackage[]>` — `handlePublish` e botão "Atualizar" agora fazem `.then(pkgs => setPackages(pkgs))` para realmente atualizar a lista.
+**Motivo:** Sprint 5 skeleton + bug fix: lista não atualizava após publicar ou clicar atualizar.
+
+### `app/(dashboard)/notifications/page.tsx` (ATUALIZADO)
+Skeleton 4 items (ícone + 2 linhas de texto) durante load. Fix ESLint `react-hooks/set-state-in-effect`.
+**Motivo:** Sprint 5 skeleton.
+
+---
+
 ## 2026-08-22 — TTS + Captions + Content Package
 
 ### `lib/tts/types.ts` (CRIADO)
@@ -380,3 +420,81 @@ Removido auto-append de `sub_id` na URL de afiliado. Sub_id agora é enviado ape
 ### `docs/DECISIONS.md` (MODIFICADO)
 - Corrigida referência a `campaign_creatives` (tabela inexistente) → `creatives` (tabela real)
 - Adicionada decisão sobre sub_id não inserido no URL
+
+---
+
+## 2026-08-22 — Sprint 5: Color audit + Skeletons + Bug Fix
+
+### `app/(dashboard)/revenue/page.tsx` (ATUALIZADO)
+`StatCard` componente reescrito com CSS vars inline. Outer wrapper + todos os cards: `bg-gray-950/bg-gray-900/border-gray-800` → `var(--bg)/var(--surface)/var(--border)`.
+**Motivo:** auditoria mobile — cores hardcoded ignoram o tema. Cards status, top produtos, canais, criativos todos corrigidos.
+
+### `app/(dashboard)/notifications/page.tsx` (ATUALIZADO)
+Outer wrapper + skeleton items + notification items: Tailwind hardcoded → CSS vars inline. Notification items: lido usa `rgba(17,17,39,0.5)`, não-lido usa `var(--surface)`.
+**Motivo:** auditoria mobile — consistência com design system.
+
+### `app/(dashboard)/distribute/page.tsx` (ATUALIZADO + BUG FIX)
+Bug fix: `load()` retorna `Promise<PublicationPackage[]>` mas `handlePublish` e botão "Atualizar" descartavam o resultado — lista nunca atualizava após publicar. Fix: `.then(pkgs => setPackages(pkgs)).catch(() => null)`.
+Cores: outer wrapper + package cards + expanded section → CSS vars.
+**Motivo:** bug causava estado obsoleto pós-publicação; cores inconsistentes com tema.
+
+### `app/(dashboard)/sales/import/page.tsx` (ATUALIZADO)
+Redesign completo para CSS vars: drag zone (brand orange dashed border on hover), help box, preview card, column mapping, sample rows, buttons, done state (sucesso/erro).
+**Motivo:** auditoria mobile — toda a página usava Tailwind hardcoded. Brand orange no drag zone melhora UX.
+
+### `app/(dashboard)/connect/page.tsx` (ATUALIZADO)
+Estado de loading "Verificando conexões..." substituído por skeleton de 3 cards animados (`animate-pulse`) com ícone, título e badge placeholder.
+**Motivo:** auditoria mobile — texto simples sem contexto visual; skeleton comunica o que está carregando.
+
+---
+
+## 2026-08-22 — Sprint 6: Owned Digital Products (E-books)
+
+### `supabase/005_owned_products.sql` (CRIADO)
+`ALTER TABLE products ADD COLUMN IF NOT EXISTS product_type text NOT NULL DEFAULT 'affiliate' CHECK (...)`, `cost numeric(10,2)`, `checkout_url text`, `margin_pct numeric(5,2)`. Index `idx_products_product_type`. Comentários documentam semântica de cada campo para owned vs affiliate.
+**Motivo:** menor invasão possível — reutiliza tabela `products` existente, sem quebrar Shopee (default='affiliate'). Zero mudança no fluxo atual.
+
+### `app/(dashboard)/products/add-own/page.tsx` (CRIADO)
+Formulário para adicionar produto próprio manualmente: título, descrição, categoria (9 opções), plataforma (Hotmart/Kiwify/Eduzz/Monetizze/Gumroad/Manual), preço de venda, custo/taxa (opcional), margem calculada em tempo real, URL de checkout, thumbnail. POST para `/api/products` com `product_type: 'owned'`, `marketplace: 'owned'`, `commissionRate: 100`. Estado `done` com CTAs "Ver Produtos" e "+ Outro produto". Banner explicativo do pipeline (oferta → score → criativo → vídeo → distribuição → receita).
+**Motivo:** Sprint 6 — owned products entram no mesmo pipeline sem infra nova.
+
+### `app/(dashboard)/layout.tsx` (ATUALIZADO)
+Adicionado `/products/add-own` no sidebarNav, grupo 'core', após /products.
+**Motivo:** acesso via sidebar desktop.
+
+### `app/(dashboard)/mais/page.tsx` (ATUALIZADO)
+Adicionado `/products/add-own` no menu mobile após /products.
+**Motivo:** acesso mobile via página "Mais".
+
+---
+
+## 2026-08-22 — Sprint 7: Owned Products ponta a ponta
+
+### `app/api/products/route.ts` (REESCRITO)
+- POST: aceita e persiste `product_type`, `cost`, `checkout_url`, `margin_pct`, `marketplace` para produtos próprios. Campos affiliate existentes intactos — regressão Shopee zero.
+- Validações: `validMoney()` para preço/custo; `validUrl()` para checkout_url — sem vazar URLs em logs/erros.
+- Graceful degradation: se migration 005 não aplicada, retorna `{error, migration_required:true}` com HTTP 409 e instrução precisa em vez de 500 genérico.
+- PATCH novo: permite editar `cost`, `checkout_url`, `margin_pct`, `affiliate_url`, `commission_rate`, `category`, `image_url` com validações.
+- `marketplace`: `isOwned ? 'owned' : 'shopee'` como default seguro.
+- `commissionRate`: default 100 para produtos próprios, 0 para afiliados.
+**Motivo:** API anterior ignorava silenciosamente todos os campos owned. POST sem checkout_url aceitava produto inútil.
+
+### `app/(dashboard)/products/add-own/page.tsx` (REDESIGN COMPLETO)
+- UX premium mobile-first: touch targets ≥44px em todos os botões e inputs.
+- `calcMargin()` em tempo real: margem % + receita líquida coloridas (verde/amarelo/vermelho por nível).
+- Prefixo "R$" visual nos campos de preço/custo sem alterar o valor enviado.
+- Focus ring laranja (CSS var) em vez de azul padrão.
+- Estado `migrationRequired`: tela específica com instrução de 3 passos em vez de mensagem de erro genérica.
+- Sucesso: CTA primário vai para `/launch` (ação de maior impacto) em vez de só `/products`.
+- Validação client-side: URL deve começar com http, sem submissão com campos inválidos.
+**Motivo:** Sprint 7 — UX funcional, visual Affiliate OS, erro de migration tratado explicitamente.
+
+### `app/(dashboard)/products/page.tsx` (ATUALIZADO)
+- Interface `Product` agora inclui `marketplace: string | null`.
+- Badge `PRÓPRIO` em laranja (var(--brand)) abaixo do título quando `marketplace === 'owned'`.
+**Motivo:** distinção visual clara entre produtos próprios e afiliados na lista.
+
+### `scripts/test-owned-product.sh` (CRIADO)
+6 testes: (1) criar produto próprio válido, (2) 400 sem título, (3) 400 owned sem checkout_url, (4) regressão Shopee, (5) score no produto próprio, (6) listagem com contagem de produtos próprios.
+Trata gracefully `migration_required` com ⚠ em vez de ❌ — não bloqueia os outros testes.
+Syntax: `bash -n` OK.

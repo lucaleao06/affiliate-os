@@ -51,7 +51,7 @@ function ConnectPageInner() {
           Conexões
         </h1>
         <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
-          Conecte suas redes para publicação automática
+          Prepare seus canais para distribuição supervisionada
         </p>
       </div>
 
@@ -91,8 +91,19 @@ function ConnectPageInner() {
       )}
 
       {loading ? (
-        <div className="text-center py-12" style={{ color: 'rgba(255,255,255,0.3)' }}>
-          Verificando conexões...
+        <div className="space-y-3">
+          {[0,1,2].map(i => (
+            <div key={i} className="rounded-2xl p-5 animate-pulse" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-1/3 rounded" style={{ background: 'rgba(255,255,255,0.07)' }} />
+                  <div className="h-3 w-1/5 rounded" style={{ background: 'rgba(255,255,255,0.04)' }} />
+                </div>
+                <div className="w-20 h-6 rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }} />
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="space-y-3">
@@ -100,8 +111,10 @@ function ConnectPageInner() {
           <div className="rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-                  style={{ background: 'linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)' }}>
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-xl border"
+                  style={{ background: 'rgba(255,107,53,0.16)', borderColor: 'rgba(255,107,53,0.28)' }}
+                >
                   📸
                 </div>
                 <div>
@@ -140,7 +153,7 @@ function ConnectPageInner() {
                 </p>
                 <a href="/api/connect/meta"
                   className="block text-center py-3 rounded-xl text-sm font-bold transition-all active:scale-95"
-                  style={{ background: 'linear-gradient(135deg,#833ab4,#fd1d1d)', color: '#fff' }}>
+                  style={{ background: 'var(--brand)', color: '#fff' }}>
                   Conectar Instagram →
                 </a>
               </div>

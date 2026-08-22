@@ -35,8 +35,16 @@ export default function HojePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64" style={{ color: 'rgba(255,255,255,0.3)' }}>
-        Carregando...
+      <div className="p-4 md:p-6 space-y-4 max-w-2xl">
+        <div className="h-28 rounded-2xl animate-pulse" style={{ background: 'var(--surface)' }} />
+        <div className="grid grid-cols-2 gap-3">
+          {[0,1,2,3].map(i => (
+            <div key={i} className="h-20 rounded-2xl animate-pulse" style={{ background: 'var(--surface)' }} />
+          ))}
+        </div>
+        {[0,1].map(i => (
+          <div key={i} className="h-16 rounded-2xl animate-pulse" style={{ background: 'var(--surface)' }} />
+        ))}
       </div>
     )
   }

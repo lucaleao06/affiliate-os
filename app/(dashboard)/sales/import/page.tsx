@@ -97,25 +97,27 @@ export default function SalesImportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen text-white" style={{ background: 'var(--bg)' }}>
       <div className="max-w-2xl mx-auto px-4 py-6">
         <h1 className="text-xl font-bold mb-1">Importar Relatório</h1>
-        <p className="text-sm text-gray-500 mb-6">CSV do Shopee Affiliate Portal</p>
+        <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.4)' }}>CSV do Shopee Affiliate Portal</p>
 
         {step === 'upload' && (
           <div>
             <div
-              className={`rounded-2xl border-2 border-dashed transition-colors p-10 text-center cursor-pointer ${
-                dragging ? 'border-blue-500 bg-blue-900/10' : 'border-gray-700 hover:border-gray-500'
-              }`}
+              className="rounded-2xl border-2 border-dashed transition-colors p-10 text-center cursor-pointer"
+              style={{
+                borderColor: dragging ? 'rgba(255,107,53,0.6)' : 'rgba(255,255,255,0.12)',
+                background: dragging ? 'rgba(255,107,53,0.06)' : 'transparent',
+              }}
               onDragOver={e => { e.preventDefault(); setDragging(true) }}
               onDragLeave={() => setDragging(false)}
               onDrop={onDrop}
               onClick={() => fileRef.current?.click()}
             >
               <div className="text-4xl mb-3">📄</div>
-              <p className="text-gray-300 font-medium">Arraste o CSV do Shopee aqui</p>
-              <p className="text-gray-600 text-xs mt-1">ou clique para selecionar · somente .csv ou .tsv</p>
+              <p className="font-medium text-white">Arraste o CSV do Shopee aqui</p>
+              <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>ou clique para selecionar · somente .csv ou .tsv</p>
               <input
                 ref={fileRef}
                 type="file"
@@ -125,8 +127,8 @@ export default function SalesImportPage() {
               />
             </div>
 
-            <div className="mt-4 bg-gray-900 rounded-xl p-4 border border-gray-800 text-xs text-gray-500 space-y-1">
-              <p className="font-medium text-gray-400">Como exportar do Shopee Affiliate:</p>
+            <div className="mt-4 rounded-xl p-4 text-xs space-y-1 leading-relaxed" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'rgba(255,255,255,0.52)' }}>
+              <p className="font-medium" style={{ color: 'rgba(255,255,255,0.76)' }}>Como exportar do Shopee Affiliate:</p>
               <p>1. Acesse affiliate.shopee.com.br</p>
               <p>2. Menu Relatórios → Relatório de Comissões</p>
               <p>3. Selecione o período e clique em Exportar CSV</p>
@@ -136,10 +138,10 @@ export default function SalesImportPage() {
 
         {step === 'preview' && preview && (
           <div className="space-y-4">
-            <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
+            <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm font-medium">{filename}</p>
-                <button onClick={reset} className="text-xs text-gray-500 hover:text-gray-300">✕ Cancelar</button>
+                <button onClick={reset} className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>✕ Cancelar</button>
               </div>
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div>
@@ -166,26 +168,26 @@ export default function SalesImportPage() {
             )}
 
             {/* Column mapping */}
-            <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
-              <p className="text-xs text-gray-500 mb-2 uppercase tracking-wide">Colunas detectadas</p>
+            <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <p className="text-xs mb-2 uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.35)' }}>Colunas detectadas</p>
               <div className="flex flex-wrap gap-1.5">
                 {preview.columns.map(c => (
-                  <span key={c} className="text-xs px-2 py-1 rounded-full bg-gray-800 text-gray-300">{c}</span>
+                  <span key={c} className="text-xs px-2 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.6)' }}>{c}</span>
                 ))}
               </div>
             </div>
 
             {/* Sample rows */}
             {preview.sample.length > 0 && (
-              <div className="bg-gray-900 rounded-xl p-4 border border-gray-800">
-                <p className="text-xs text-gray-500 mb-3 uppercase tracking-wide">Prévia (5 linhas)</p>
+              <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <p className="text-xs mb-3 uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.35)' }}>Prévia (5 linhas)</p>
                 <div className="space-y-2">
                   {preview.sample.map((row, i) => (
-                    <div key={i} className="flex items-center gap-3 text-xs border-b border-gray-800 pb-2 last:border-0 last:pb-0">
-                      <span className="text-gray-600 w-4">{i + 1}</span>
+                    <div key={i} className="flex items-center gap-3 text-xs pb-2 last:pb-0" style={{ borderBottom: i < preview.sample.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                      <span className="w-4" style={{ color: 'rgba(255,255,255,0.2)' }}>{i + 1}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="truncate text-gray-300">{row.product_name ?? '—'}</p>
-                        <p className="text-gray-600">{row.order_id} · {row.occurred_at?.slice(0, 10)} · {row.status}</p>
+                        <p className="truncate" style={{ color: 'rgba(255,255,255,0.7)' }}>{row.product_name ?? '—'}</p>
+                        <p style={{ color: 'rgba(255,255,255,0.3)' }}>{row.order_id} · {row.occurred_at?.slice(0, 10)} · {row.status}</p>
                       </div>
                       <span className="flex-shrink-0 font-semibold text-emerald-400">
                         {fmt(row.commission_value ?? 0)}
@@ -196,19 +198,21 @@ export default function SalesImportPage() {
               </div>
             )}
 
-            {error && <p className="text-red-400 text-sm">{error}</p>}
+            {error && <p className="text-sm" style={{ color: '#f87171' }}>{error}</p>}
 
             <div className="flex gap-3">
               <button
                 onClick={reset}
-                className="flex-1 py-3 rounded-xl border border-gray-700 text-sm font-semibold text-gray-300 hover:border-gray-500 transition"
+                className="flex-1 py-3 rounded-xl text-sm font-semibold transition"
+                style={{ border: '1px solid var(--border)', color: 'rgba(255,255,255,0.6)', background: 'transparent' }}
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmImport}
                 disabled={importing}
-                className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-sm font-semibold transition"
+                className="flex-1 py-3 rounded-xl text-sm font-semibold transition disabled:opacity-50"
+                style={{ background: 'var(--brand)', color: '#fff' }}
               >
                 {importing ? 'Importando...' : `Importar ${preview.totalRows} linhas`}
               </button>
@@ -218,34 +222,37 @@ export default function SalesImportPage() {
 
         {step === 'done' && result && (
           <div className="space-y-4">
-            <div className={`rounded-2xl p-6 text-center border ${
-              result.status === 'completed' ? 'border-emerald-800 bg-emerald-900/20' : 'border-red-800 bg-red-900/20'
-            }`}>
+            <div className="rounded-2xl p-6 text-center"
+              style={result.status === 'completed'
+                ? { background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }
+                : { background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
               <div className="text-4xl mb-3">{result.status === 'completed' ? '✅' : '⚠️'}</div>
-              <p className="font-bold text-lg">
+              <p className="font-bold text-lg text-white">
                 {result.status === 'completed' ? 'Importação concluída' : 'Importação com erros'}
               </p>
               <div className="grid grid-cols-3 gap-4 mt-4 text-center">
                 <div>
                   <p className="text-2xl font-bold text-emerald-400">{result.imported}</p>
-                  <p className="text-xs text-gray-500">importados</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>importados</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-yellow-400">{result.skipped}</p>
-                  <p className="text-xs text-gray-500">ignorados</p>
+                  <p className="text-2xl font-bold" style={{ color: '#fbbf24' }}>{result.skipped}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>ignorados</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-red-400">{result.errors}</p>
-                  <p className="text-xs text-gray-500">erros</p>
+                  <p className="text-2xl font-bold" style={{ color: '#f87171' }}>{result.errors}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>erros</p>
                 </div>
               </div>
             </div>
 
             <div className="flex gap-3">
-              <button onClick={reset} className="flex-1 py-3 rounded-xl border border-gray-700 text-sm font-semibold text-gray-300 hover:border-gray-500 transition">
+              <button onClick={reset} className="flex-1 py-3 rounded-xl text-sm font-semibold transition"
+                style={{ border: '1px solid var(--border)', color: 'rgba(255,255,255,0.6)', background: 'transparent' }}>
                 Nova importação
               </button>
-              <a href="/revenue" className="flex-1 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-sm font-semibold transition text-center block">
+              <a href="/revenue" className="flex-1 py-3 rounded-xl text-sm font-semibold transition text-center block text-white"
+                style={{ background: 'rgba(34,197,94,0.2)', border: '1px solid rgba(34,197,94,0.3)', color: '#4ade80' }}>
                 Ver receita →
               </a>
             </div>

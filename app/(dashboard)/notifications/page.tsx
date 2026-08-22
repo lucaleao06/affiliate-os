@@ -66,7 +66,7 @@ export default function NotificationsPage() {
   const unreadCount = items.filter(n => !n.read).length
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen text-white" style={{ background: 'var(--bg)' }}>
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
@@ -85,7 +85,19 @@ export default function NotificationsPage() {
         </div>
 
         {loading ? (
-          <div className="text-center text-gray-500 py-20">Carregando...</div>
+          <div className="space-y-2">
+            {[0,1,2,3].map(i => (
+              <div key={i} className="rounded-xl p-4 animate-pulse" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <div className="flex gap-3">
+                  <div className="w-6 h-6 rounded bg-gray-800 flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 w-1/2 rounded bg-gray-800" />
+                    <div className="h-3 w-3/4 rounded bg-gray-700" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : items.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-4xl mb-3">🔔</div>
@@ -96,11 +108,11 @@ export default function NotificationsPage() {
             {items.map(n => (
               <div
                 key={n.id}
-                className={`rounded-xl border p-4 transition cursor-pointer ${
-                  n.read
-                    ? 'border-gray-800 bg-gray-900/40'
-                    : 'border-gray-700 bg-gray-900 shadow-sm'
-                }`}
+                className="rounded-xl p-4 transition cursor-pointer"
+                style={{
+                  background: n.read ? 'rgba(17,17,39,0.5)' : 'var(--surface)',
+                  border: `1px solid ${n.read ? 'var(--border)' : 'rgba(255,255,255,0.14)'}`,
+                }}
                 onClick={() => !n.read && markRead(n.id)}
               >
                 <div className="flex items-start gap-3">

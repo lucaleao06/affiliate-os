@@ -110,7 +110,7 @@ export default function DistributePage() {
       } else {
         setPublishResult(`❌ ${json.result?.error ?? json.error ?? 'Erro desconhecido'}`)
       }
-      await load()
+      load().then(pkgs => setPackages(pkgs)).catch(() => null)
     } finally {
       setPublishing(false)
     }
@@ -122,11 +122,11 @@ export default function DistributePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen text-white" style={{ background: 'var(--bg)' }}>
       <div className="max-w-2xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-bold">Distribuição</h1>
-          <button onClick={load} className="text-xs text-gray-400 hover:text-white transition">↻ Atualizar</button>
+          <button onClick={() => load().then(pkgs => setPackages(pkgs)).catch(() => null)} className="text-xs text-gray-400 hover:text-white transition">↻ Atualizar</button>
         </div>
 
         {/* Filter pills */}
@@ -147,7 +147,20 @@ export default function DistributePage() {
         </div>
 
         {loading ? (
-          <div className="text-center text-gray-500 py-20">Carregando...</div>
+          <div className="space-y-3">
+            {[0,1,2].map(i => (
+              <div key={i} className="rounded-xl border border-gray-800 bg-gray-900/60 p-4 animate-pulse">
+                <div className="flex gap-3">
+                  <div className="w-10 h-16 rounded-lg bg-gray-800 flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 w-2/3 rounded bg-gray-800" />
+                    <div className="h-3 w-1/3 rounded bg-gray-800" />
+                    <div className="h-3 w-1/4 rounded bg-gray-800" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : packages.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-4xl mb-3">📦</div>
@@ -159,9 +172,11 @@ export default function DistributePage() {
             {packages.map(pkg => (
               <div
                 key={pkg.id}
-                className={`rounded-xl border transition cursor-pointer ${
-                  selected?.id === pkg.id ? 'border-blue-500 bg-gray-900' : 'border-gray-800 bg-gray-900/60 hover:border-gray-600'
-                }`}
+                className="rounded-xl transition cursor-pointer"
+                style={{
+                  background: 'var(--surface)',
+                  border: selected?.id === pkg.id ? '1px solid rgba(96,165,250,0.6)' : '1px solid var(--border)',
+                }}
                 onClick={() => setSelected(selected?.id === pkg.id ? null : pkg)}
               >
                 {/* Card header */}
@@ -195,7 +210,7 @@ export default function DistributePage() {
 
                 {/* Expanded detail */}
                 {selected?.id === pkg.id && (
-                  <div className="border-t border-gray-800 px-4 pb-4 pt-3 space-y-4">
+                  <div className="px-4 pb-4 pt-3 space-y-4" style={{ borderTop: '1px solid var(--border)' }}>
                     {/* Checklist */}
                     <div>
                       <p className="text-xs text-gray-500 mb-2 uppercase tracking-wide">Checklist</p>

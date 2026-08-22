@@ -30,12 +30,13 @@ function StatCard({ icon, label, value, href, accent }: {
 
 export default function DashboardHome() {
   const [stats, setStats] = useState<Stats | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetch('/api/dashboard')
       .then(r => r.json())
-      .then((d: Stats) => setStats(d))
-      .catch(() => null)
+      .then((d: Stats) => { setStats(d); setLoading(false) })
+      .catch(() => setLoading(false))
   }, [])
 
   const s = stats
@@ -89,10 +90,24 @@ export default function DashboardHome() {
 
       {/* Stat grid */}
       <div className="grid grid-cols-2 gap-3">
-        <StatCard icon="📦" label="Produtos" value={s?.products ?? '—'} href="/products" />
-        <StatCard icon="🎯" label="Campanhas" value={s?.campaigns ?? '—'} href="/products" />
-        <StatCard icon="⭐" label="Score médio" value={s ? `${s.avgScore}/100` : '—'} href="/products" accent={!!(s && s.avgScore >= 70)} />
-        <StatCard icon="✅" label="Taxa aprovação" value={approvalRate !== null ? `${approvalRate}%` : '—'} href="/queue" accent={!!(approvalRate && approvalRate >= 60)} />
+        {loading ? (
+          <>
+            {[0,1,2,3].map(i => (
+              <div key={i} className="rounded-2xl p-4 animate-pulse h-24" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <div className="w-8 h-8 rounded-lg mb-2" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                <div className="h-6 w-10 rounded mb-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
+                <div className="h-3 w-16 rounded" style={{ background: 'rgba(255,255,255,0.04)' }} />
+              </div>
+            ))}
+          </>
+        ) : (
+          <>
+            <StatCard icon="📦" label="Produtos" value={s?.products ?? '—'} href="/products" />
+            <StatCard icon="🎯" label="Campanhas" value={s?.campaigns ?? '—'} href="/products" />
+            <StatCard icon="⭐" label="Score médio" value={s ? `${s.avgScore}/100` : '—'} href="/products" accent={!!(s && s.avgScore >= 70)} />
+            <StatCard icon="✅" label="Taxa aprovação" value={approvalRate !== null ? `${approvalRate}%` : '—'} href="/queue" accent={!!(approvalRate && approvalRate >= 60)} />
+          </>
+        )}
       </div>
 
       {/* Criativo breakdown */}
