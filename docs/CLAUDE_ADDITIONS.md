@@ -498,3 +498,26 @@ Adicionado `/products/add-own` no menu mobile após /products.
 6 testes: (1) criar produto próprio válido, (2) 400 sem título, (3) 400 owned sem checkout_url, (4) regressão Shopee, (5) score no produto próprio, (6) listagem com contagem de produtos próprios.
 Trata gracefully `migration_required` com ⚠ em vez de ❌ — não bloqueia os outros testes.
 Syntax: `bash -n` OK.
+
+## 2026-08-22 — Sprint 8: Honest LocalProvider + Extensão Dedup
+
+### `lib/ai/mock-provider.ts` (REESCRITO — LocalProvider)
+- Renomeado internamente para `LocalProvider`, `name = 'local'`, `model = 'data-driven-v1'`.
+- **Removido completamente:** "testei por X dias", "aprovei", "nunca mais vivo sem", "estoque limitado", "mudou minha rotina", "Aproveita o desconto hoje", "Desconto de X% nesse produto incrível" (quando sem originalPrice real), prefixo `[MOCK]`.
+- Score: lógica determinística mantida (honesta). Reasoning agora lista os dados reais usados e orienta para configurar ANTHROPIC_API_KEY para análise por IA.
+- Criativos: hooks baseados exclusivamente em dados verificáveis (nota, vendas, comissão, preço). Nenhuma primeira pessoa. Ângulos são instruções de abordagem, não depoimentos.
+- Scripts: narração factual — fala do produto sem afirmar ter testado. "Dados verificados: X avaliações, nota Y/5."
+- CTAs: "Link na descrição — veja o preço atual na Shopee", "Confira na Shopee" — sem escassez falsa.
+- Captions: baseadas em dados reais. Desconto (X% OFF) só aparece se `originalPrice > price` real.
+- Storyboard: visuais são *instruções de produção*, não afirmações. "Use a foto pública do produto como referência." Cena 2 não diz mais "mãos usando" (implica ter testado). Overlay de desconto só com dados reais. Nota de rodapé: "Rascunho gerado localmente — configure ANTHROPIC_API_KEY para roteiro por IA."
+**Motivo:** Conteúdo anterior era enganoso — afirmava experiência pessoal fictícia e escassez não verificada. NUNCA deve aparecer como resultado publicável.
+
+### `app/api/extension/add-product/route.ts` (ATUALIZADO — dedup)
+- Antes de inserir, consulta se `affiliate_url` já existe no workspace.
+- Se duplicado: retorna HTTP 409 `{ duplicate: true, product: {id, title}, message }` sem criar novo registro.
+**Motivo:** Extensão podia criar múltiplas cópias do mesmo produto ao ser acionada várias vezes na mesma página.
+
+### `extension/popup.js` (ATUALIZADO — dedup UI)
+- Trata HTTP 409 com `duplicate: true`: exibe "⚠️ Produto já cadastrado com esse link." sem lançar erro.
+- Reabilita botão imediatamente (não espera 3s como no sucesso).
+**Motivo:** UX sem erro falso — produto já cadastrado não é falha, é informação.

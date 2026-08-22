@@ -39,7 +39,16 @@
   // Load settings from storage
   chrome.storage.local.get(['affiliateOsUrl', 'affiliateOsToken'], (result) => {
     settings.url = result.affiliateOsUrl || 'http://localhost:3000'
-    settings.token = result.affiliateOsToken || ''
+    // onInstalled normally creates this token. Keep the popup resilient when
+    // Chrome reloads an unpacked extension without firing that lifecycle hook.
+    if (!result.affiliateOsToken) {
+      const bytes = new Uint8Array(24)
+      crypto.getRandomValues(bytes)
+      settings.token = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
+      chrome.storage.local.set({ affiliateOsToken: settings.token })
+    } else {
+      settings.token = result.affiliateOsToken
+    }
     settingsUrlInput.value = settings.url
     settingsTokenInput.value = settings.token
   })
@@ -69,7 +78,11 @@
 
     if (!isShopee) {
       notShopee.style.display = 'block'
-      mainForm.style.display = 'none'
+      // Keep settings visible when the popup is opened as its own page. This
+      // is the recovery path for configuring the local token before visiting
+      // a Shopee product.
+      productTitle.textContent = 'Configure o token e abra um produto Shopee'
+      addBtn.disabled = true
       return
     }
 
@@ -145,6 +158,12 @@
       })
 
       const data = await resp.json()
+      if (resp.status === 409 && data.duplicate) {
+        showMsg('⚠️ Produto já cadastrado com esse link.', 'warn')
+        addBtn.disabled = false
+        addBtn.textContent = '➕ Adicionar ao Affiliate OS'
+        return
+      }
       if (!resp.ok) throw new Error(data.error || `HTTP ${resp.status}`)
 
       showMsg('✅ Produto adicionado! Acesse /products para ver.', 'success')

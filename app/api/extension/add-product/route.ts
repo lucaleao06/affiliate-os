@@ -86,6 +86,22 @@ export async function POST(req: NextRequest) {
 
     const admin = createAdmin()
 
+    // Deduplicação: rejeitar se affiliateUrl já cadastrado no workspace
+    const { data: existing } = await admin
+      .from('products')
+      .select('id, title')
+      .eq('affiliate_url', body.affiliateUrl)
+      .eq('workspace_id', '00000000-0000-0000-0000-000000000001')
+      .limit(1)
+      .single()
+
+    if (existing) {
+      return NextResponse.json(
+        { duplicate: true, product: existing, message: 'Produto já cadastrado com esse link de afiliado.' },
+        { status: 409, headers }
+      )
+    }
+
     const { data, error } = await admin
       .from('products')
       .insert({
