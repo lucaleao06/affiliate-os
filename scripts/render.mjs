@@ -144,7 +144,7 @@ async function renderCreative(creativeId) {
   const filename = `render_${creativeId.slice(0,8)}_${Date.now()}.mp4`
   const outputPath = path.join(rendersDir, filename)
 
-  const ffmpegPath = '/usr/bin/ffmpeg' // sandbox path
+  const ffmpegPath = findFFmpeg()
   const args = [
     '-y',
     '-f', 'lavfi', '-i', `color=c=0x0d0d1a:size=${W}x${H}:rate=30`,

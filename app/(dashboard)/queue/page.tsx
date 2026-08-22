@@ -56,19 +56,17 @@ export default function QueuePage() {
   const [error, setError] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
 
-  const fetchQueue = useCallback(async () => {
-    try {
-      const res = await fetch('/api/queue')
-      const data = await res.json() as { creatives: Creative[] }
-      setCreatives(data.creatives ?? [])
-    } catch {
-      setError('Erro ao carregar fila')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const fetchQueue = useCallback((): Promise<Creative[]> =>
+    fetch('/api/queue')
+      .then(r => r.json() as Promise<{ creatives: Creative[] }>)
+      .then(d => d.creatives ?? [])
+  , [])
 
-  useEffect(() => { void fetchQueue() }, [fetchQueue])
+  useEffect(() => {
+    fetchQueue()
+      .then(items => { setCreatives(items); setLoading(false) })
+      .catch(() => { setError('Erro ao carregar fila'); setLoading(false) })
+  }, [fetchQueue])
 
   const updateStatus = async (id: string, status: 'approved' | 'rejected') => {
     setUpdating(id)

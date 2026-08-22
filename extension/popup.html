@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add to Affiliate OS</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 340px;
+      background: #0f0f10;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 13px;
+    }
+    .header {
+      background: linear-gradient(135deg, #FF6B35, #e85d25);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .header-logo { font-size: 18px; }
+    .header-title { font-weight: 700; font-size: 13px; letter-spacing: 0.3px; }
+    .header-sub { font-size: 10px; opacity: 0.75; }
+    .body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+    .product-preview {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .product-img {
+      width: 48px; height: 48px;
+      border-radius: 6px;
+      object-fit: cover;
+      background: rgba(255,255,255,0.08);
+      flex-shrink: 0;
+    }
+    .product-title {
+      font-weight: 600;
+      font-size: 12px;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .product-price {
+      font-size: 11px;
+      color: #FF6B35;
+      margin-top: 3px;
+      font-weight: 600;
+    }
+    label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      display: block;
+      margin-bottom: 4px;
+    }
+    input {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #fff;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus { border-color: rgba(255,107,53,0.5); }
+    input::placeholder { color: rgba(255,255,255,0.25); }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .btn {
+      width: 100%;
+      padding: 10px;
+      background: #FF6B35;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .msg {
+      font-size: 11px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .msg.success { background: rgba(34,197,94,0.12); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
+    .msg.error   { background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
+    .msg.warn    { background: rgba(234,179,8,0.10); color: #eab308; border: 1px solid rgba(234,179,8,0.2); }
+    .settings-toggle {
+      font-size: 10px;
+      color: rgba(255,255,255,0.3);
+      cursor: pointer;
+      text-align: center;
+      padding: 4px;
+      text-decoration: underline;
+    }
+    .settings-toggle:hover { color: rgba(255,255,255,0.5); }
+    #settingsSection { display: none; }
+    #settingsSection.open { display: block; }
+    .divider {
+      height: 1px;
+      background: rgba(255,255,255,0.07);
+      margin: 2px 0;
+    }
+    .not-shopee {
+      padding: 24px 14px;
+      text-align: center;
+      color: rgba(255,255,255,0.35);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .not-shopee span { font-size: 28px; display: block; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-logo">🎯</div>
+    <div>
+      <div class="header-title">Add to Affiliate OS</div>
+      <div class="header-sub">Shopee → Campanha em segundos</div>
+    </div>
+  </div>
+
+  <div id="notShopee" class="not-shopee" style="display:none">
+    <span>🛍️</span>
+    Abra uma página de produto Shopee para usar esta extensão.
+  </div>
+
+  <div id="mainForm" class="body">
+    <!-- Product preview -->
+    <div class="product-preview">
+      <img id="productImg" class="product-img" src="" alt="produto">
+      <div style="flex:1; min-width:0">
+        <div id="productTitle" class="product-title">Carregando produto...</div>
+        <div id="productPrice" class="product-price"></div>
+      </div>
+    </div>
+
+    <!-- Affiliate URL (required) -->
+    <div>
+      <label>Link de afiliado Shopee *</label>
+      <input id="affiliateUrl" type="url" placeholder="https://s.shopee.com.br/..." />
+    </div>
+
+    <!-- Commission + Sub_id -->
+    <div class="row">
+      <div>
+        <label>Comissão (%)</label>
+        <input id="commissionRate" type="number" step="0.1" min="0" max="100" placeholder="8" value="8" />
+      </div>
+      <div>
+        <label>Sub_id (opcional)</label>
+        <input id="subId" type="text" placeholder="meu_canal" />
+      </div>
+    </div>
+
+    <!-- Category -->
+    <div>
+      <label>Categoria</label>
+      <input id="category" type="text" placeholder="electronics, fashion, home..." value="geral" />
+    </div>
+
+    <div id="statusMsg"></div>
+
+    <button id="addBtn" class="btn">➕ Adicionar ao Affiliate OS</button>
+
+    <div class="divider"></div>
+    <div class="settings-toggle" id="settingsToggle">⚙️ configurações</div>
+
+    <div id="settingsSection">
+      <div style="display:flex;flex-direction:column;gap:8px;padding-top:4px">
+        <div>
+          <label>URL do Affiliate OS</label>
+          <input id="settingsUrl" type="url" placeholder="http://localhost:3000" />
+        </div>
+        <div>
+          <label>Token local (deve coincidir com EXTENSION_LOCAL_TOKEN no .env.local)</label>
+          <input id="settingsToken" type="text" placeholder="token gerado automaticamente" />
+        </div>
+        <button id="saveSettingsBtn" class="btn" style="background:rgba(255,255,255,0.12);font-size:11px;padding:7px">💾 Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

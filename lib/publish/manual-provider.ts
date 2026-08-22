@@ -34,7 +34,7 @@ export class ManualPublicationProvider implements PublicationProvider {
     }
   }
 
-  async getStatus(_id: string) {
+  async getStatus() {
     return { status: 'manual_required' }
   }
 }

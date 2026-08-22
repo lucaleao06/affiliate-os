@@ -68,7 +68,22 @@ function ConnectPageInner() {
           ✅ YouTube conectado{ytChannel ? ` — ${ytChannel}` : ''}!
         </div>
       )}
-      {error && (
+      {error && error === 'no_ig_business' && (
+        <div className="rounded-xl p-4 text-sm space-y-3"
+          style={{ background: 'rgba(234,179,8,0.08)', color: '#eab308', border: '1px solid rgba(234,179,8,0.2)' }}>
+          <p className="font-bold">⚠️ Conta Instagram Business não encontrada</p>
+          <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            O OAuth funcionou, mas nenhuma Página do Facebook conectada tem uma conta Instagram Business/Creator vinculada. Siga os passos:
+          </p>
+          <ol className="text-xs leading-loose space-y-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            <li>1. No Instagram, vá em <strong style={{color:'rgba(255,255,255,0.7)'}}>Configurações → Conta → Mudar para conta profissional</strong> (Business ou Creator)</li>
+            <li>2. Em <strong style={{color:'rgba(255,255,255,0.7)'}}>Configurações → Conta → Conta vinculada</strong>, conecte ao Facebook</li>
+            <li>3. Em <strong style={{color:'rgba(255,255,255,0.7)'}}>Meta Business Suite</strong>, vá em Configurações → Contas do Instagram e vincule ao sua Página</li>
+            <li>4. Volte aqui e clique em <strong style={{color:'rgba(255,255,255,0.7)'}}>Conectar Instagram</strong> novamente</li>
+          </ol>
+        </div>
+      )}
+      {error && error !== 'no_ig_business' && (
         <div className="rounded-xl p-4 text-sm"
           style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
           ❌ Erro: {decodeURIComponent(error).replace(/_/g, ' ')}

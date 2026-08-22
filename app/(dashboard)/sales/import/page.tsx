@@ -100,7 +100,7 @@ export default function SalesImportPage() {
     <div className="min-h-screen bg-gray-950 text-white">
       <div className="max-w-2xl mx-auto px-4 py-6">
         <h1 className="text-xl font-bold mb-1">Importar Relatório</h1>
-        <p className="text-sm text-gray-500 mb-6">CSV/XLSX do Shopee Affiliate Portal</p>
+        <p className="text-sm text-gray-500 mb-6">CSV do Shopee Affiliate Portal</p>
 
         {step === 'upload' && (
           <div>
@@ -115,11 +115,11 @@ export default function SalesImportPage() {
             >
               <div className="text-4xl mb-3">📄</div>
               <p className="text-gray-300 font-medium">Arraste o CSV do Shopee aqui</p>
-              <p className="text-gray-600 text-xs mt-1">ou clique para selecionar</p>
+              <p className="text-gray-600 text-xs mt-1">ou clique para selecionar · somente .csv ou .tsv</p>
               <input
                 ref={fileRef}
                 type="file"
-                accept=".csv,.xlsx,.xls,.tsv"
+                accept=".csv,.tsv"
                 className="hidden"
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
               />

@@ -78,16 +78,18 @@ export default function DistributePage() {
   const [publishResult, setPublishResult] = useState<string | null>(null)
   const [filter, setFilter] = useState<string>('all')
 
-  const load = useCallback(async () => {
-    setLoading(true)
+  const load = useCallback((): Promise<PublicationPackage[]> => {
     const url = filter === 'all' ? '/api/publish' : `/api/publish?status=${filter}`
-    const res = await fetch(url)
-    const json = await res.json()
-    setPackages(json.packages ?? [])
-    setLoading(false)
+    return fetch(url)
+      .then(r => r.json() as Promise<{ packages: PublicationPackage[] }>)
+      .then(j => j.packages ?? [])
   }, [filter])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    load()
+      .then(pkgs => { setPackages(pkgs); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [load])
 
   async function handlePublish(pkg: PublicationPackage) {
     setPublishing(true)
@@ -132,7 +134,7 @@ export default function DistributePage() {
           {['all', 'ready', 'draft', 'pending_rights', 'published', 'failed'].map(s => (
             <button
               key={s}
-              onClick={() => setFilter(s)}
+              onClick={() => { setLoading(true); setFilter(s) }}
               className={`flex-shrink-0 text-xs px-3 py-1.5 rounded-full border transition ${
                 filter === s
                   ? 'bg-white text-gray-900 border-white'

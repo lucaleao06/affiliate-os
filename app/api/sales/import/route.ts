@@ -33,6 +33,13 @@ export async function POST(req: NextRequest) {
     const file = formData.get('file') as File | null
     if (!file) return NextResponse.json({ error: 'file is required' }, { status: 400 })
     filename = file.name
+    // Reject XLSX/XLS — no xlsx library installed; file.text() returns binary garbage
+    const ext = filename.split('.').pop()?.toLowerCase() ?? ''
+    if (ext === 'xlsx' || ext === 'xls') {
+      return NextResponse.json({
+        error: 'Formato XLSX não suportado ainda. Exporte o relatório como CSV no Portal Shopee Affiliate e faça upload do arquivo .csv.',
+      }, { status: 415 })
+    }
     csvText = await file.text()
   } else {
     // JSON with raw csvText (for preview from paste)

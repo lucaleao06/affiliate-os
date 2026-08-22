@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Add to Affiliate OS",
+  "version": "1.0.0",
+  "description": "Adiciona produtos Shopee ao Affiliate OS com um clique.",
+  "permissions": ["activeTab", "storage"],
+  "host_permissions": [
+    "https://shopee.com.br/*",
+    "https://*.shopee.com.br/*",
+    "http://localhost:3000/*",
+    "http://127.0.0.1:3000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png",
+      "48": "icon48.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://shopee.com.br/*", "https://*.shopee.com.br/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png"
+  }
+}

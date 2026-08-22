@@ -49,7 +49,6 @@ export default function RevenuePage() {
   const [period, setPeriod] = useState('30d')
 
   useEffect(() => {
-    setLoading(true)
     fetch(`/api/revenue?period=${period}`)
       .then(r => r.json())
       .then((d: RevenueData) => { setData(d); setLoading(false) })
@@ -65,7 +64,7 @@ export default function RevenuePage() {
             {['today', '7d', '30d', 'all'].map(p => (
               <button
                 key={p}
-                onClick={() => setPeriod(p)}
+                onClick={() => { setLoading(true); setPeriod(p) }}
                 className={`text-xs px-3 py-1.5 rounded-full border transition ${
                   period === p ? 'bg-white text-gray-900 border-white' : 'border-gray-700 text-gray-400 hover:border-gray-500'
                 }`}

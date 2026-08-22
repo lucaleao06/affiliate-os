@@ -74,18 +74,21 @@ export async function GET(req: NextRequest) {
     const pages = pagesData.data ?? []
 
     // Step 4: Discover linked IG Business account
+    // IMPORTANT: use the page's own access_token (not the user token) to query
+    // instagram_business_account — Meta requires page-level auth for this field.
     let igUserId: string | null = null
     let igUsername: string | null = null
     let pageName: string | null = null
 
     for (const page of pages) {
-      const igRes = await fetch(`${GRAPH}/${page.id}?fields=instagram_business_account&access_token=${longToken}`)
+      const pageToken = page.access_token ?? longToken
+      const igRes = await fetch(`${GRAPH}/${page.id}?fields=instagram_business_account&access_token=${pageToken}`)
       const igData = await igRes.json() as { instagram_business_account?: { id: string } }
       if (igData.instagram_business_account?.id) {
         igUserId = igData.instagram_business_account.id
         pageName = page.name
-        // Get username
-        const profileRes = await fetch(`${GRAPH}/${igUserId}?fields=username&access_token=${longToken}`)
+        // Get username using page token
+        const profileRes = await fetch(`${GRAPH}/${igUserId}?fields=username&access_token=${pageToken}`)
         const profileData = await profileRes.json() as { username?: string }
         igUsername = profileData.username ?? null
         break

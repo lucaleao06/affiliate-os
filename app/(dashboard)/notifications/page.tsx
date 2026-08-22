@@ -38,15 +38,12 @@ export default function NotificationsPage() {
   const [items, setItems] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
 
-  async function load() {
-    setLoading(true)
-    const res = await fetch('/api/notifications')
-    const json = await res.json()
-    setItems(json.notifications ?? [])
-    setLoading(false)
-  }
-
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    fetch('/api/notifications')
+      .then(r => r.json() as Promise<{ notifications: Notification[] }>)
+      .then(j => { setItems(j.notifications ?? []); setLoading(false) })
+      .catch(() => setLoading(false))
+  }, [])
 
   async function markRead(id: string) {
     await fetch('/api/notifications', {

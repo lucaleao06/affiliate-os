@@ -35,7 +35,9 @@ export async function GET() {
   }, { onConflict: 'workspace_id,platform' })
 
   const redirectUri = `${baseUrl}/api/connect/meta/callback`
-  const scopes = 'instagram_basic,instagram_content_publish,pages_show_list,pages_read_engagement'
+  // instagram_content_publish requer configuração de Use Case no Meta Developer Console.
+  // Conectamos com scopes básicos primeiro; publishing requer configuração adicional.
+  const scopes = 'instagram_basic,pages_show_list,pages_read_engagement'
 
   const authUrl = new URL(`https://www.facebook.com/${META_VERSION}/dialog/oauth`)
   authUrl.searchParams.set('client_id', appId)

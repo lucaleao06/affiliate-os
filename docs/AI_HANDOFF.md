@@ -1,6 +1,14 @@
 # AI_HANDOFF — Affiliate OS v0.4
 
-_Última atualização: 2026-08-22_
+> **Visão estratégica permanente do projeto:** ver `docs/PROJECT_VISION.md`.
+
+_Última atualização: 2026-08-22 (Sprint 4 Sessão 2 — revisão Codex)_
+
+## Correções Sprint 4 (Sessão 2)
+- **Contratos reais documentados:** `/api/score` retorna `score.overallScore` (camelCase); `/api/video-factory` aceita `creativeId`; fila é `PATCH /api/queue {id, status}`; publicação é `POST /api/publish {action: 'create'|'publish'}`
+- **Extensão Chrome:** host_permissions localhost adicionados; token via `crypto.getRandomValues`; sub_id não modifica URL de afiliado
+- **DECISIONS.md:** tabela real é `creatives` (não `campaign_creatives`); sub_id policy documentada
+- **test-pipeline.sh:** reescrito com contratos reais; ⚠ para deps externas, ❌ só em contratos quebrados
 
 ## Estado atual
 Pipeline completo: Produto → Score → Criativo → Aprovação → Storyboard → **MP4 renderizado** → **SRT captions** → **ContentPackage** → **PublicationPackage** → **Distribution** → **Growth Analysis** → **Winner Detection** → **Autopilot Evaluation** → **Publicação Real (IG/YouTube)**.

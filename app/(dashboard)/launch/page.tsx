@@ -6,26 +6,17 @@
  * Steps: 1. Produto → 2. Score → 3. Criativos → 4. Storyboard → 5. Render → 6. Distribuir
  */
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 
 type Step = 'product' | 'score' | 'creative' | 'storyboard' | 'render' | 'distribute'
 
-interface Product { id: string; name: string; price: number; commission_rate: number; affiliate_url: string }
-interface Score { score: number; recommendation: string; strengths: string[]; risks: string[] }
+interface Product { id: string; title: string; price: number; commission_rate: number; affiliate_url: string }
+interface Score { overallScore: number; recommendation: string; reasoning: string }
 interface Creative { id: string; hook: string; caption: string; cta: string; angle: string }
-interface Storyboard { scenes: Array<{ title: string; text: string; duration: string }>; voiceover?: string }
+interface Storyboard { scenes: Array<{ visual: string; text_overlay: string; voiceover: string; duration: string }> }
 interface RenderResult { filename: string; downloadUrl: string; durationSec: number; fileSizeBytes: number }
 
 const STEPS: Step[] = ['product', 'score', 'creative', 'storyboard', 'render', 'distribute']
-const STEP_LABELS: Record<Step, string> = {
-  product: 'Produto',
-  score: 'Score',
-  creative: 'Criativo',
-  storyboard: 'Storyboard',
-  render: 'Vídeo',
-  distribute: 'Distribuir',
-}
-
 export default function LaunchPage() {
   const [step, setStep] = useState<Step>('product')
   const [busy, setBusy] = useState(false)
@@ -60,13 +51,12 @@ export default function LaunchPage() {
     setBusy(true); setError(null)
     try {
       const data = await api('/api/products', {
-        name: productForm.name,
+        title: productForm.name,
         price: parseFloat(productForm.price) || 0,
-        commission_rate: parseFloat(productForm.commission_rate) / 100,
-        affiliate_url: productForm.affiliate_url,
+        commissionRate: parseFloat(productForm.commission_rate) || 0,
+        affiliateUrl: productForm.affiliate_url,
         category: productForm.category,
         description: productForm.description,
-        platform: 'shopee',
       })
       setProduct(data.product as Product)
       setStep('score')
@@ -80,10 +70,6 @@ export default function LaunchPage() {
     try {
       const data = await api('/api/score', {
         productId: product.id,
-        name: product.name,
-        price: product.price,
-        commissionRate: product.commission_rate,
-        affiliateUrl: product.affiliate_url,
       })
       setScore(data.score as Score)
       setStep('creative')
@@ -179,7 +165,7 @@ export default function LaunchPage() {
           🚀 Lançar Campanha
         </h1>
         <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
-          Produto real → vídeo publicado, em {STEPS.length} etapas
+          Produto real → vídeo pronto para publicar, em {STEPS.length} etapas
         </p>
       </div>
 
@@ -296,7 +282,7 @@ export default function LaunchPage() {
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           <h2 className="font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>⭐ Score do produto</h2>
           <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            {product.name} — R$ {product.price} · {(product.commission_rate * 100).toFixed(0)}% comissão
+            {product.title} — R$ {product.price} · {Number(product.commission_rate).toFixed(1)}% comissão
           </p>
 
           {!score ? (
@@ -311,26 +297,20 @@ export default function LaunchPage() {
             <div className="space-y-3">
               <div className="flex items-center gap-4">
                 <div className="text-5xl font-black"
-                  style={{ color: score.score >= 70 ? '#22c55e' : score.score >= 50 ? '#eab308' : '#ef4444' }}>
-                  {score.score}
+                  style={{ color: score.overallScore >= 70 ? '#22c55e' : score.overallScore >= 50 ? '#eab308' : '#ef4444' }}>
+                  {score.overallScore}
                 </div>
                 <div>
                   <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.8)' }}>/100</p>
                   <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>{score.recommendation}</p>
                 </div>
               </div>
-              {score.strengths.length > 0 && (
-                <div className="space-y-1">
-                  {score.strengths.slice(0, 2).map((s, i) => (
-                    <p key={i} className="text-xs" style={{ color: '#22c55e' }}>✓ {s}</p>
-                  ))}
-                </div>
-              )}
+              <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>{score.reasoning}</p>
               <button
                 onClick={() => setStep('creative')}
                 className="w-full py-3 rounded-xl font-bold text-sm transition-all active:scale-95"
-                style={{ background: score.score >= 50 ? 'var(--brand)' : 'rgba(255,255,255,0.1)', color: '#fff' }}>
-                {score.score >= 50 ? 'Gerar criativos →' : 'Continuar mesmo assim →'}
+                style={{ background: score.overallScore >= 50 ? 'var(--brand)' : 'rgba(255,255,255,0.1)', color: '#fff' }}>
+                {score.overallScore >= 50 ? 'Gerar criativos →' : 'Continuar mesmo assim →'}
               </button>
             </div>
           )}
@@ -364,7 +344,7 @@ export default function LaunchPage() {
                     background: selectedCreative?.id === c.id ? 'rgba(255,107,53,0.08)' : 'rgba(255,255,255,0.03)',
                   }}>
                   <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'rgba(255,107,53,0.7)' }}>
-                    {c.angle}
+                    {c.angle || 'Variação'}
                   </p>
                   <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.85)' }}>{c.hook}</p>
                   <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>{c.caption?.slice(0, 60)}…</p>
@@ -406,10 +386,10 @@ export default function LaunchPage() {
                       style={{ background: 'var(--brand)', color: '#fff' }}>
                       C{i + 1}
                     </span>
-                    <span className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.7)' }}>{sc.title}</span>
+                    <span className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.7)' }}>{sc.visual}</span>
                     <span className="text-[10px] ml-auto" style={{ color: 'rgba(255,255,255,0.3)' }}>{sc.duration}</span>
                   </div>
-                  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{sc.text?.slice(0, 80)}</p>
+                  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{sc.text_overlay?.slice(0, 80)}</p>
                 </div>
               ))}
               <button

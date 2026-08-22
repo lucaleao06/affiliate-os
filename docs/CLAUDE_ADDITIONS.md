@@ -304,3 +304,79 @@ Links: Hoje, Lançar Campanha, Conexões. CSS vars `var(--surface)` / `var(--bor
 - Todos os cards usam `active:scale-95 transition-all` para feedback tátil mobile
 - `-webkit-tap-highlight-color: transparent` em globals.css elimina flash azul do Safari iOS
 - Safe areas aplicadas via CSS env() — funciona standalone PWA + navegação normal
+
+---
+
+## 2026-08-22 — Sprint Autônoma: Extensão + Contratos + Segurança
+
+### `extension/` (CRIADO — pasta nova)
+Extensão Chrome Manifest V3 "Add to Affiliate OS".
+- `manifest.json` — MV3, permissões mínimas: `activeTab`, `storage`. Host: `shopee.com.br`.
+- `content.js` — content script: lê título, preço, imagem e URL do DOM visível. Sem cookies.
+- `background.js` — service worker: gera token local aleatório no install.
+- `popup.html` / `popup.js` — UI do popup: extrai produto, pede link afiliado + comissão + Sub_id, envia para `/api/extension/add-product`.
+- `icon16.png` / `icon32.png` / `icon48.png` — ícones gerados localmente (laranja + cruz).
+**Motivo:** Product Hunter (PROJECT_VISION §7). Sem extensão, adicionar produto requer colar URL manualmente.
+
+### `app/api/extension/add-product/route.ts` (CRIADO)
+Endpoint dedicado para a extensão.
+- CORS restrito: aceita somente `chrome-extension://` e `localhost` (nunca `*`).
+- Auth via `X-Extension-Token` header validado contra `EXTENSION_LOCAL_TOKEN` env.
+- Fail-safe: sem `EXTENSION_LOCAL_TOKEN` no env, rejeita 100% das requisições.
+- Sub_id e source salvos em `raw_data` (sem coluna separada no DB).
+**Motivo:** Não expor `/api/products` ao CORS aberto. Separação de responsabilidade + segurança.
+
+### `docs/EXTENSION_SETUP.md` (CRIADO)
+Guia de instalação da extensão em modo desenvolvedor + configuração do token.
+
+### `app/api/creative/route.ts` (MODIFICADO)
+Enriquece `savedCreatives` com campo `angle` antes de retornar (derivado de `creatives.angles[i]`).
+**Motivo:** DB não tem coluna `angle`; wizard mostrava sempre "Variação" em vez do ângulo real.
+
+### `app/api/sales/import/route.ts` (MODIFICADO)
+Detecta upload de `.xlsx`/`.xls` e retorna erro 415 com instrução clara.
+**Motivo:** `file.text()` retorna lixo binário para XLSX; parser esperava CSV. Promessa falsa remov.
+
+### `app/(dashboard)/sales/import/page.tsx` (MODIFICADO)
+Removido `.xlsx,.xls` do `accept` no input + textos ajustados para "CSV apenas".
+**Motivo:** consistência com a limitação real do backend.
+
+### `docs/CLAUDE_STATUS.md` (CRIADO)
+Estado operacional snapshot para handoff entre agentes.
+
+### `docs/PROJECT_VISION.md` (CRIADO)
+Memória estratégica permanente — 33 seções, visão completa do produto.
+
+---
+
+## 2026-08-22 — Sprint 4 Sessão 2: UX + Testes + Decisões
+
+### `app/(dashboard)/products/page.tsx` (MODIFICADO)
+Progressive disclosure no formulário: 4 campos essenciais visíveis (título, affiliateUrl, comissão, preço) + seção "Dados adicionais" colapsável com os demais.
+**Motivos:** (1) Form original com 12 campos simultâneos parecia formulário técnico; (2) campo `affiliateUrl` estava ausente — crítico, é o link que gera comissão.
+Touch targets maiores (py-3.5), skeleton loaders na lista, botão 🔗 direto no card para abrir link afiliado.
+
+### `docs/DECISIONS.md` (CRIADO)
+Registro permanente de decisões técnicas e de produto não-óbvias: token local da extensão, CORS restrito, rejeição XLSX, angle não salvo no banco, SUPERVISED default, workspace UUID fixo, scope Meta sem content_publish, progressive disclosure.
+**Motivo:** evitar re-decisão dos mesmos trade-offs em sessões futuras.
+
+### `scripts/test-pipeline.sh` (CRIADO → CORRIGIDO)
+Script bash para teste end-to-end do loop comercial com contratos reais:
+`produto → score (score.overallScore camelCase) → creative (creatives[0].id) → PATCH /api/queue approved → POST /api/video-factory {creativeId} → POST /api/video-factory/render → POST /api/publish action=create → action=publish → verifica requiresManualAction=true (SUPERVISED)`.
+Não toca dados reais de publicação. Produto prefixo `[TESTE]`. Avisos (⚠) para etapas que precisam de AI key/FFmpeg; só falha (❌) em contratos quebrados.
+
+### `extension/manifest.json` (MODIFICADO)
+Adicionado `http://localhost:3000/*` e `http://127.0.0.1:3000/*` em `host_permissions`.
+**Motivo:** sem essa permissão o fetch da extensão para o servidor local é bloqueado pelo browser.
+
+### `extension/background.js` (MODIFICADO)
+Token gerado via `crypto.getRandomValues(Uint8Array(24))` em vez de `Math.random()`.
+**Motivo:** `Math.random()` não é criptograficamente seguro; token é usado como autenticação.
+
+### `extension/popup.js` (MODIFICADO)
+Removido auto-append de `sub_id` na URL de afiliado. Sub_id agora é enviado apenas como campo de payload → salvo em `raw_data.sub_id`.
+**Motivo:** modificar o link oficial da Shopee pode quebrar rastreamento ou violar termos do programa de afiliados.
+
+### `docs/DECISIONS.md` (MODIFICADO)
+- Corrigida referência a `campaign_creatives` (tabela inexistente) → `creatives` (tabela real)
+- Adicionada decisão sobre sub_id não inserido no URL

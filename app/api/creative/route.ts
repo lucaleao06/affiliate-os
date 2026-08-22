@@ -126,7 +126,13 @@ export async function POST(req: NextRequest) {
 
     if (creativesErr) return NextResponse.json({ error: creativesErr.message }, { status: 500 })
 
-    return NextResponse.json({ campaign, angles, creatives: savedCreatives, raw: creatives })
+    // Enrich with angle label from the generated angles array (DB has no angle column)
+    const enrichedCreatives = (savedCreatives ?? []).map((c, i) => ({
+      ...c,
+      angle: (creatives.angles as string[])[i] ?? `Variação ${i + 1}`,
+    }))
+
+    return NextResponse.json({ campaign, angles, creatives: enrichedCreatives, raw: creatives })
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }
