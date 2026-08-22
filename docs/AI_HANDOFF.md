@@ -1,10 +1,27 @@
 # AI_HANDOFF — Affiliate OS v0.2
 
-_Última atualização: 2026-08-21_
+_Última atualização: 2026-08-22_
 
 ## Estado atual
-Pipeline completo: Produto → Score → Criativo → Aprovação → Storyboard → **MP4 renderizado e validado**.
-`npx tsc --noEmit` → exit 0.
+Pipeline completo: Produto → Score → Criativo → Aprovação → Storyboard → **MP4 renderizado** → **SRT captions** → **ContentPackage manifest**.
+Mobile-first + PWA: manifest, ícones, safe-areas, bottom nav, autopilot page.
+`npx tsc --noEmit` → exit 0. Commits: `2bbdca1` (PWA) · `f38706c` (TTS+captions) · `a072e43` (cleanup).
+
+## TTS
+- `lib/tts/types.ts` — TTSProvider interface
+- `lib/tts/no-voice-provider.ts` — NoVoiceProvider (audioPath: null) — fallback sempre ativo
+- `lib/tts/elevenlabs-provider.ts` — ElevenLabs real (ativo se ELEVENLABS_API_KEY)
+- `lib/tts/index.ts` — getTTSProvider() factory
+- **Débito técnico:** ElevenLabs não testado E2E — requer chave + crédito.
+
+## Captions
+- `lib/render/captions.ts` — buildCaptions() → CaptionEntry[] com timestamps, toSRT(), saveCaptions()
+- Geradas automaticamente após cada render: `<runId>.srt` + `<runId>.captions.json` ao lado do .mp4
+
+## Content Package
+- `lib/render/content-package.ts` — ContentPackage + PublicationChecklist (8 checks, ready: bool)
+- Salvo como `<runId>.package.json` após cada render
+- Inclui: videoPath, srtPath, caption, cta, affiliateUrl, channel, checklist
 
 ## Stack
 Next.js 16 (App Router) · TypeScript · Tailwind · Supabase · Anthropic/Gemini/Mock · **FFmpeg**
