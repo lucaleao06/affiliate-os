@@ -32,6 +32,11 @@ const TAB_CFG: { key: FilterTab; label: string; color: string }[] = [
   { key: 'all', label: 'Todos', color: 'rgba(255,255,255,0.4)' },
 ]
 
+/** Detecta criativos gerados pelo provider mock antigo (prefixo [MOCK]) */
+function isLegacyMock(c: Creative): boolean {
+  return !!(c.hook?.includes('[MOCK]') || c.script?.includes('[MOCK]'))
+}
+
 function Pill({ status }: { status: string }) {
   const cfg: Record<string, { label: string; bg: string; color: string }> = {
     pending: { label: 'Pendente', bg: 'rgba(234,179,8,0.15)', color: '#fbbf24' },
@@ -51,6 +56,7 @@ export default function QueuePage() {
   const [creatives, setCreatives] = useState<Creative[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<FilterTab>('pending')
+  const [hideLegacy, setHideLegacy] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
   const [regenerating, setRegenerating] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -98,21 +104,41 @@ export default function QueuePage() {
     finally { setRegenerating(null) }
   }
 
+  const legacyCount = creatives.filter(isLegacyMock).length
+  const visible = hideLegacy ? creatives.filter(c => !isLegacyMock(c)) : creatives
   const counts = {
-    pending: creatives.filter(c => c.status === 'pending').length,
-    approved: creatives.filter(c => c.status === 'approved').length,
-    rejected: creatives.filter(c => c.status === 'rejected').length,
-    all: creatives.length,
+    pending: visible.filter(c => c.status === 'pending').length,
+    approved: visible.filter(c => c.status === 'approved').length,
+    rejected: visible.filter(c => c.status === 'rejected').length,
+    all: visible.length,
   }
-  const filtered = tab === 'all' ? creatives : creatives.filter(c => c.status === tab)
+  const filtered = tab === 'all' ? visible : visible.filter(c => c.status === tab)
 
   return (
     <div className="p-4 md:p-6 space-y-4 max-w-2xl">
-      <div>
-        <h1 className="text-2xl font-black text-white">Fila de Aprovação</h1>
-        <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-          Decida o destino de cada criativo
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-black text-white">Fila de Aprovação</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            Decida o destino de cada criativo
+          </p>
+        </div>
+        {legacyCount > 0 && (
+          <button
+            onClick={() => setHideLegacy(v => !v)}
+            className="flex-shrink-0 text-xs px-3 py-1.5 rounded-xl font-medium transition-all mt-1"
+            style={hideLegacy ? {
+              background: 'rgba(234,179,8,0.12)',
+              color: '#fbbf24',
+              border: '1px solid rgba(234,179,8,0.3)',
+            } : {
+              background: 'var(--surface)',
+              color: 'rgba(255,255,255,0.4)',
+              border: '1px solid var(--border)',
+            }}>
+            {hideLegacy ? `⚠️ ${legacyCount} legados ocultos` : `Mostrar tudo`}
+          </button>
+        )}
       </div>
 
       {error && (
@@ -144,6 +170,14 @@ export default function QueuePage() {
         })}
       </div>
 
+      {/* Honest AI notice for real pending creatives */}
+      {!loading && tab === 'pending' && counts.pending > 0 && (
+        <div className="rounded-xl px-3 py-2.5 text-xs leading-relaxed"
+          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', color: 'rgba(255,255,255,0.4)' }}>
+          Rascunhos gerados com dados reais do produto (preço, nota, vendas, comissão). Revise cada item antes de aprovar — não use sem ler.
+        </div>
+      )}
+
       {loading && (
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
@@ -169,6 +203,7 @@ export default function QueuePage() {
           const product = c.campaigns?.products
           const isUpdating = updating === c.id
           const isExpanded = expanded === c.id
+          const legacy = isLegacyMock(c)
 
           return (
             <div key={c.id} className="rounded-2xl overflow-hidden"
@@ -187,7 +222,15 @@ export default function QueuePage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-white truncate">{product?.title ?? '—'}</p>
-                    <Pill status={c.status} />
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {legacy && (
+                        <span className="text-xs px-1.5 py-0.5 rounded font-medium"
+                          style={{ background: 'rgba(234,179,8,0.12)', color: '#fbbf24', border: '1px solid rgba(234,179,8,0.25)' }}>
+                          legado
+                        </span>
+                      )}
+                      <Pill status={c.status} />
+                    </div>
                   </div>
                   {product?.commission_rate && (
                     <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>

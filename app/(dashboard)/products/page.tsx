@@ -105,6 +105,7 @@ function Input({
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [hideTest, setHideTest] = useState(true)
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -113,6 +114,12 @@ export default function ProductsPage() {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  /** Produtos com títulos de teste — ocultos da view comercial por padrão */
+  const TEST_PATTERN = /^\[(TESTE|TEST)\]/i
+  const isTestProduct = (p: Product) => TEST_PATTERN.test(p.title) || p.title === 'Produto Shopee'
+  const visibleProducts = hideTest ? products.filter(p => !isTestProduct(p)) : products
+  const testCount = products.filter(isTestProduct).length
 
   const fetchProducts = useCallback((): Promise<Product[]> =>
     fetch('/api/products')
@@ -371,9 +378,27 @@ export default function ProductsPage() {
 
         {/* Product List */}
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
-            Produtos ({products.length})
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+              Produtos ({visibleProducts.length})
+            </h2>
+            {testCount > 0 && (
+              <button
+                onClick={() => setHideTest(v => !v)}
+                className="text-xs px-3 py-1 rounded-lg font-medium transition-all"
+                style={hideTest ? {
+                  background: 'rgba(234,179,8,0.12)',
+                  color: '#fbbf24',
+                  border: '1px solid rgba(234,179,8,0.25)',
+                } : {
+                  background: 'rgba(255,255,255,0.06)',
+                  color: 'rgba(255,255,255,0.4)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}>
+                {hideTest ? `⚠️ ${testCount} teste${testCount > 1 ? 's' : ''} oculto${testCount > 1 ? 's' : ''}` : 'Ocultar testes'}
+              </button>
+            )}
+          </div>
 
           {loading && (
             <div className="space-y-3">
@@ -386,17 +411,21 @@ export default function ProductsPage() {
             </div>
           )}
 
-          {!loading && products.length === 0 && (
+          {!loading && visibleProducts.length === 0 && (
             <div className="bg-gray-900 rounded-2xl border border-gray-800 p-8 text-center">
               <p className="text-3xl mb-3">🎯</p>
-              <p className="text-gray-400 text-sm font-medium">Nenhum produto ainda</p>
+              <p className="text-gray-400 text-sm font-medium">
+                {products.length > 0 && hideTest ? 'Apenas testes cadastrados' : 'Nenhum produto ainda'}
+              </p>
               <p className="text-gray-600 text-xs mt-1">
-                Adicione acima ou instale a extensão Chrome
+                {products.length > 0 && hideTest
+                  ? 'Clique em "ocultos" acima para vê-los'
+                  : 'Adicione acima ou instale a extensão Chrome'}
               </p>
             </div>
           )}
 
-          {products.map((product) => {
+          {visibleProducts.map((product) => {
             const score = product.product_scores?.[0]
             const isScoring = scoring === product.id
             const isGenerating = generatingId === product.id
