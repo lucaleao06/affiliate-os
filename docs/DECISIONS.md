@@ -4,6 +4,22 @@ Registro de escolhas não-óbvias feitas durante o desenvolvimento. Cada decisã
 
 ---
 
+## [2026-08-22] Sprint 10 — Auto-criar `publication_packages` no fim do render
+
+**Decisão:** O endpoint `/api/video-factory/render` insere automaticamente em `publication_packages` após cada render bem-sucedido. Wrapped em try/catch não-fatal.
+
+**Contexto:** `/distribute` lê `/api/publish` que consulta `publication_packages`. Antes, essa tabela nunca era populada automaticamente, então a página de distribuição ficava vazia mesmo após um render completo.
+
+**Alternativas consideradas:**
+- Criar endpoint separado `/api/publish/create` chamado pelo front — rejeitado: adiciona um passo manual desnecessário.
+- Trigger Postgres na tabela `automation_runs` — rejeitado: lógica de negócio no banco, mais difícil de debugar.
+
+**Justificativa:** Render bem-sucedido sempre deve produzir um pacote distribuível. A inserção automática mantém o invariante sem exigir ação extra do usuário.
+
+**Status derivado:** `ready` se `checklist.ready`, `pending_rights` se `rights_status='unknown'` (padrão atual), `draft` caso contrário.
+
+---
+
 ## [2026-08] Produto próprio — reutilizar tabela `products` com discriminador marketplace
 
 **Decisão:** Produtos próprios (e-books, cursos, templates) entram na mesma tabela `products` com `marketplace = 'owned'` e `product_type = 'owned'`. Não foi criada uma tabela separada.

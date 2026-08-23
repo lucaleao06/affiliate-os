@@ -1,15 +1,64 @@
 # CLAUDE_STATUS
-_Atualizado: 2026-08-22 — Sprint 7 (owned products ponta a ponta)_
+_Atualizado: 2026-08-22 — Sprint 11 (UX COMERCIAL: filtros MOCK, honestidade IA, SUPERVISED mode, distribute corrigido)_
 
 ## Estado atual
 
 - Branch: `main`
-- Sprint 5 commit: **pendente** — rodar `~/Desktop/affiliate-os-sprint5-commit.command`
-- Sprint 6 commit: **pendente** — rodar `~/Desktop/affiliate-os-sprint6-commit.command`
-- Sprint 7 commit: **pendente** — rodar `~/Desktop/affiliate-os-sprint7-commit.command`
-- `npm run lint`: ✅ clean
-- `npx tsc --noEmit`: ✅ 0 erros
-- `bash -n scripts/test-owned-product.sh`: ✅ syntax OK
+- Sprint 8 commit: **pendente** — rodar `~/Desktop/affiliate-os-sprint8-commit.command`
+- Sprint 9 commit: **pendente** — rodar `~/Desktop/affiliate-os-sprint9-commit.command`
+- Sprint 10 commit: **pendente** — rodar `~/Desktop/affiliate-os-sprint10-commit.command`
+- Sprint 11 commit: **pendente** — rodar `~/Desktop/affiliate-os-sprint11-commit.command`
+- Servidor: rodando (porta 3000)
+
+### ✅ SPRINT 11 — UX COMERCIAL (2026-08-22)
+
+**Correções e melhorias:**
+- `app/api/hoje/route.ts`: fix bug NULL Supabase — `realPending` JS-filtrado; `awaitingApproval` conta só criativos reais não-MOCK
+- `app/(dashboard)/hoje/page.tsx`: sales card honesto (sem R$ 0,00 verde); sem emojis nos labels; "Iniciar Pipeline"
+- `app/(dashboard)/queue/page.tsx`: aviso de honestidade IA acima da fila de pendentes
+- `app/(dashboard)/video-factory/page.tsx`: label "Rascunho baseado em dados" quando `provider=local`
+- `app/(dashboard)/distribute/page.tsx`: banner SUPERVISIONADO; lógica PUBLICAR corrigida (antes habilitava com rights=unknown); guia manual para pending_rights
+
+**Validação:**
+| Check | Resultado |
+|---|---|
+| TypeScript | 0 erros ✅ |
+| `awaitingApproval` wired to `realPending` | ✅ |
+| Lint | pendente verificação no Mac |
+
+
+### ✅ SPRINT 10 — PIPELINE REAL FECHADO (2026-08-22)
+
+**Correções:**
+- `app/api/video-factory/render/route.ts`: após render, auto-insere em `publication_packages` → `/distribute` (usa `/api/publish`) agora mostra pacote imediatamente
+- `app/api/video-factory/route.ts`: GET agora retorna `storyboards` + `renders` de `automation_runs` → UI sobrevive navegação
+- `app/(dashboard)/video-factory/page.tsx`: pré-popula estado do GET; botão "Ver na Distribuição →" pós-render
+
+**Validação pipeline completo (creative `c6170a5e-2c3e-41c1-9299-b178d13bc9aa` — Calça Jeans Gaven, pending):**
+
+| Etapa | Resultado |
+|---|---|
+| Storyboard POST | `status:200`, `provider:'local'`, 5 cenas, `hasMock:false` ✅ |
+| Render POST | `1080×1920`, `h264`, `30s`, `0.57MB`, `7.7s`, `packageReady:true` ✅ |
+| Captions SRT | gerado ✅ |
+| `/api/publish` | 1 pacote, `status:'pending_rights'` (rights_status='unknown', esperado) ✅ |
+| Lint | 0 erros (1 warning pré-existente em extension/popup.js) ✅ |
+| TypeScript | 0 erros ✅ |
+
+### ✅ PRIMEIRO LOOP REAL COMPLETO (2026-08-22)
+
+Produto: "Calça Jeans Gaven Wide Leg Feminina Pantalona" — R$50,16, nota 4.8, 2100 avail., 13% comissão
+
+| Etapa | Resultado |
+|---|---|
+| Score (`/api/score`) | 74/100 "VALE TESTAR", provider='local' ✅ |
+| Criativo (`/api/creative`) | 3 criativos com hooks factuais ✅ |
+| Aprovação na Fila | creative `2123a722` aprovado ✅ |
+| Storyboard (`/api/video-factory`) | 5 cenas, provider='local' ✅ |
+| Render (`/api/video-factory/render`) | `render_2123a722_1787436194016.mp4`, 1080×1920, 30s, 0.57MB ✅ |
+| Content Package | `packageReady: true` → publication_ready ✅ |
+
+Ver vídeo: `http://localhost:3001/api/video-factory/output/render_2123a722_1787436194016.mp4`
 
 ## O que a Sprint 7 entregou
 

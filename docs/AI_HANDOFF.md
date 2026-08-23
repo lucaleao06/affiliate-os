@@ -2,7 +2,34 @@
 
 > **Visão estratégica permanente do projeto:** ver `docs/PROJECT_VISION.md`.
 
-_Última atualização: 2026-08-22 (Sprint 7 — owned products ponta a ponta)_
+_Última atualização: 2026-08-22 (Sprint 10 — pipeline real fechado: distribute auto-populado)_
+
+## Sprint 10 (2026-08-22) — Pipeline real fechado
+
+### O que foi entregue
+
+**Problema raiz:** `/distribute` ficava vazio porque `/api/video-factory/render` nunca escrevia em `publication_packages`.
+
+**Fixes:**
+- `app/api/video-factory/render/route.ts`: auto-insere em `publication_packages` após render (non-fatal). Status `pending_rights` quando `rights_status='unknown'` (padrão).
+- `app/api/video-factory/route.ts`: GET retorna `{ creatives, storyboards, renders }` — storyboards e renders lidos de `automation_runs` → UI sobrevive navegação.
+- `app/(dashboard)/video-factory/page.tsx`: pré-popula `storyboards`/`renders` do GET; botão "📦 Ver na Distribuição →" após render.
+
+**Pipeline validado (creative `c6170a5e`, pending, Calça Jeans Gaven):**
+- Storyboard: 5 cenas, `provider='local'`, sem `[MOCK]` ✅
+- Render: `1080×1920`, `h264`, `30s`, `0.57MB`, `7.7s` ✅
+- `/api/publish`: 1 pacote, `pending_rights` ✅
+- TSC: 0 erros | Lint: 0 erros ✅
+
+**Commit pendente:** `~/Desktop/affiliate-os-sprint10-commit.command`
+
+### Próximos passos sugeridos
+
+1. Luca roda os commits pendentes: sprint8 → sprint9 → sprint10
+2. Aprovar creative `c6170a5e` em `/queue` → renderizar via UI → verificar `/distribute`
+3. Implementar `rights_status` flow para que pacotes atinjam `status='ready'`
+
+---
 
 ## Sprints 5–7 (2026-08-22)
 

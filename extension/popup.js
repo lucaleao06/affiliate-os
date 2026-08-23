@@ -19,7 +19,6 @@
   const addBtn = document.getElementById('addBtn')
   const statusMsg = document.getElementById('statusMsg')
   const notShopee = document.getElementById('notShopee')
-  const mainForm = document.getElementById('mainForm')
   const settingsToggle = document.getElementById('settingsToggle')
   const settingsSection = document.getElementById('settingsSection')
   const settingsUrlInput = document.getElementById('settingsUrl')

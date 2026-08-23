@@ -5,6 +5,46 @@ Cada entrada tem: data · arquivo · motivo._
 
 ---
 
+## 2026-08-22 — Sprint 11: UX comercial — filtros MOCK, honestidade IA, SUPERVISED
+
+### `app/api/hoje/route.ts` (MODIFICADO)
+Query de criativos pendentes passa a selecionar `script`; removido filtro `.not()` Supabase (excluía hooks NULL). Adicionada interface `PendingCreative` e variável `realPending` com filtro JS que exclui `[MOCK]`. Response `awaitingApproval` agora usa `realPending`.
+**Motivo:** Dashboard mostrava 0 pendentes por causa do bug NULL do Supabase; agora conta só criativos reais.
+
+### `app/(dashboard)/hoje/page.tsx` (MODIFICADO)
+Sales card: mostra mensagem "Sem vendas registradas — importe o CSV da Shopee..." quando count=0 (antes mostrava R$ 0,00 em verde). Emojis removidos dos labels das stat cards. Botão "🚀 LANÇAR CAMPANHA" → "Iniciar Pipeline".
+**Motivo:** Eliminar dados falsos/enganosos no dashboard principal.
+
+### `app/(dashboard)/queue/page.tsx` (MODIFICADO)
+Aviso de honestidade da IA adicionado acima da lista de pendentes: "Rascunhos gerados com dados reais do produto... Revise cada item antes de aprovar — não use sem ler."
+**Motivo:** SUPERVISED mode exige que usuário revise antes de aprovar.
+
+### `app/(dashboard)/video-factory/page.tsx` (MODIFICADO — Sprint 11)
+Label "Rascunho baseado em dados" exibida quando `sb.provider === 'local'`.
+**Motivo:** Honestidade sobre origem do storyboard (LocalProvider vs IA real).
+
+### `app/(dashboard)/distribute/page.tsx` (MODIFICADO)
+Banner SUPERVISIONADO no topo. Lógica do botão PUBLICAR corrigida: antes habilitava quando `rights_status === 'unknown'` (bug). Agora botão só aparece quando `checklist.ready && rights_status !== 'unknown'`. Guia de publicação manual quando status é `pending_rights` ou `unknown`. Ações primárias: "Baixar MP4" + "Copiar legenda".
+**Motivo:** Botão publicar estava com lógica invertida; guia manual necessário para operação real.
+
+---
+
+## 2026-08-22 — Sprint 10: Pipeline real fechado — distribute auto-populado
+
+### `app/api/video-factory/render/route.ts` (MODIFICADO)
+Após `saveContentPackage`, auto-insere registro em `publication_packages` via `admin.from('publication_packages').insert(...)` (non-fatal try/catch). Usa `buildPublicationChecklist` para derivar `status` ('ready' | 'pending_rights' | 'draft'). Dispara notificação `render_completed`.
+**Motivo:** `/distribute` (que lê `/api/publish` → `publication_packages`) ficava vazio porque render nunca escrevia nessa tabela.
+
+### `app/api/video-factory/route.ts` (MODIFICADO)
+GET agora consulta `automation_runs` com `type IN ['video_storyboard', 'video_render']` e constrói mapas `Record<creativeId, output>`. Resposta: `{ creatives, storyboards, renders }`.
+**Motivo:** Estado de render/storyboard era perdido ao navegar para outra página e voltar.
+
+### `app/(dashboard)/video-factory/page.tsx` (MODIFICADO)
+`useEffect` trata novo shape `{ creatives, storyboards?, renders? }` e pré-popula estado. Adicionado botão "📦 Ver na Distribuição →" após render bem-sucedido.
+**Motivo:** UI agora sobrevive navegação e guia o usuário ao próximo passo.
+
+---
+
 ## 2026-08-22 — Sprint 5: Growth, Autopilot backend, Skeletons
 
 ### `app/(dashboard)/growth/page.tsx` (CRIADO)
@@ -521,3 +561,25 @@ Syntax: `bash -n` OK.
 - Trata HTTP 409 com `duplicate: true`: exibe "⚠️ Produto já cadastrado com esse link." sem lançar erro.
 - Reabilita botão imediatamente (não espera 3s como no sucesso).
 **Motivo:** UX sem erro falso — produto já cadastrado não é falha, é informação.
+
+---
+
+## 2026-08-22 — Sprint 9: MODO MAXIMUM REAL — UX Limpeza + Pipeline Completo
+
+### Contexto
+Primeiro loop real completo executado: produto Shopee real → score 74/100 → 3 criativos → aprovação → storyboard → render MP4 1080×1920 30s → `packageReady: true`. Evidências em CLAUDE_STATUS.md.
+
+### `app/(dashboard)/queue/page.tsx` (ATUALIZADO — badge legado + toggle)
+- Função `isLegacyMock(c)`: detecta criativos com `[MOCK]` no hook ou script (12 existentes no banco).
+- Estado `hideLegacy = true` por padrão — view comercial não mostra lixo de testes.
+- Botão no header: "⚠️ N legados ocultos" ↔ "Mostrar tudo" (toggle).
+- Badge inline "legado" (amarelo) em cada card afetado quando mostrados.
+- `counts` e `filtered` calculados sobre `visible` (excluindo legados quando `hideLegacy`).
+**Motivo:** MODO MAXIMUM REAL — "Pare de misturar fixtures, testes e produto real nas telas operacionais."
+
+### `app/(dashboard)/products/page.tsx` (ATUALIZADO — ocultar testes)
+- `isTestProduct()`: titulo começa com `[TESTE]` ou `[TEST]` (case-insensitive), ou é exatamente `'Produto Shopee'`.
+- Estado `hideTest = true` por padrão.
+- Botão ao lado de "Produtos (N)": "⚠️ N teste(s) oculto(s)" ↔ "Ocultar testes".
+- Empty state diferenciado: quando `products.length > 0 && hideTest` mostra "Apenas testes cadastrados" com instrução para revelá-los.
+**Motivo:** Produtos de teste não devem contaminar a view operacional real.
