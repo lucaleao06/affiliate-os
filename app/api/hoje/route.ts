@@ -29,12 +29,12 @@ export async function GET() {
       .gte('created_at', todayIso)
       .order('created_at', { ascending: false }),
 
-    // Creatives awaiting approval
+    // Creatives awaiting approval (all pending; filter [MOCK] in JS to handle NULL hooks)
     admin.from('creatives')
-      .select('id, hook, status, campaigns(products(name))')
+      .select('id, hook, script, status, campaigns(products(name))')
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
-      .limit(10),
+      .limit(30),
 
     // Packages published today
     admin.from('publication_packages')
@@ -77,6 +77,12 @@ export async function GET() {
   const rendersOk = (renders ?? []).filter(r => r.status === 'completed')
   const rendersFailed = (renders ?? []).filter(r => r.status === 'failed')
 
+  // Filter [MOCK] legacy creatives in JS (Supabase .not() excludes NULL hooks too)
+  interface PendingCreative { id: string; hook: string | null; script: string | null; status: string; campaigns: { products: { name: string } | null } | null }
+  const realPending = ((pendingCreatives as unknown as PendingCreative[]) ?? []).filter(c =>
+    !c.hook?.includes('[MOCK]') && !c.script?.includes('[MOCK]')
+  )
+
   return NextResponse.json({
     date: new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }),
     autopilotMode: autopilotRules?.mode ?? 'PAUSED',
@@ -92,8 +98,8 @@ export async function GET() {
       })),
     },
     awaitingApproval: {
-      count: (pendingCreatives ?? []).length,
-      items: (pendingCreatives ?? []).slice(0, 3).map(c => ({
+      count: realPending.length,
+      items: realPending.slice(0, 3).map(c => ({
         id: c.id,
         hook: c.hook,
         product: ((c.campaigns as unknown as { products: { name: string } | null } | null)?.products?.name) ?? null,

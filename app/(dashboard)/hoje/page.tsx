@@ -75,24 +75,30 @@ export default function HojePage() {
       </div>
 
       {/* Sales summary */}
-      <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(135deg, rgba(255,107,53,0.2), rgba(255,107,53,0.05))', border: '1px solid rgba(255,107,53,0.2)' }}>
-        <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'rgba(255,107,53,0.7)' }}>
-          💰 Vendas hoje
+      <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: 'rgba(255,255,255,0.25)' }}>
+          Vendas hoje
         </p>
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <p className="text-2xl font-black" style={{ color: 'rgba(255,255,255,0.95)' }}>{data.sales.count}</p>
-            <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>pedidos</p>
+        {data.sales.count === 0 ? (
+          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            Sem vendas registradas — importe o CSV da Shopee para ver comissões.
+          </p>
+        ) : (
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <p className="text-2xl font-black" style={{ color: 'rgba(255,255,255,0.95)' }}>{data.sales.count}</p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>pedidos</p>
+            </div>
+            <div>
+              <p className="text-lg font-black" style={{ color: '#22c55e' }}>{commission}</p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>comissão</p>
+            </div>
+            <div>
+              <p className="text-lg font-black" style={{ color: 'rgba(255,255,255,0.6)' }}>{revenue}</p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>bruto</p>
+            </div>
           </div>
-          <div>
-            <p className="text-lg font-black" style={{ color: '#22c55e' }}>{commission}</p>
-            <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>comissão</p>
-          </div>
-          <div>
-            <p className="text-lg font-black" style={{ color: 'rgba(255,255,255,0.6)' }}>{revenue}</p>
-            <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>bruto</p>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Quick stats grid */}
@@ -101,7 +107,7 @@ export default function HojePage() {
           className="rounded-2xl p-4 transition-all active:scale-95"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           <p className="text-3xl font-black" style={{ color: 'rgba(255,255,255,0.95)' }}>{data.generated.count}</p>
-          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>🎬 vídeos gerados</p>
+          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>Vídeos gerados</p>
           {data.generated.failed > 0 && (
             <p className="text-[10px] mt-1" style={{ color: '#ef4444' }}>{data.generated.failed} com erro</p>
           )}
@@ -112,13 +118,13 @@ export default function HojePage() {
           <p className="text-3xl font-black" style={{ color: data.awaitingApproval.count > 0 ? '#eab308' : 'rgba(255,255,255,0.95)' }}>
             {data.awaitingApproval.count}
           </p>
-          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>✅ aguardando aprovação</p>
+          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>Aguardando aprovação</p>
         </Link>
         <Link href="/distribute"
           className="rounded-2xl p-4 transition-all active:scale-95"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           <p className="text-3xl font-black" style={{ color: 'rgba(255,255,255,0.95)' }}>{data.published.count}</p>
-          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>📡 publicados</p>
+          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>Publicados</p>
         </Link>
         <Link href="/notifications"
           className="rounded-2xl p-4 transition-all active:scale-95"
@@ -126,7 +132,7 @@ export default function HojePage() {
           <p className="text-3xl font-black" style={{ color: data.unreadNotifications > 0 ? 'var(--brand)' : 'rgba(255,255,255,0.95)' }}>
             {data.unreadNotifications}
           </p>
-          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>🔔 notificações novas</p>
+          <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>Notificações</p>
         </Link>
       </div>
 
@@ -185,8 +191,8 @@ export default function HojePage() {
       <Link href="/launch"
         className="block rounded-2xl p-5 text-center transition-all active:scale-95"
         style={{ background: 'var(--brand)', color: '#fff' }}>
-        <p className="text-lg font-black">🚀 LANÇAR CAMPANHA</p>
-        <p className="text-sm mt-1 opacity-75">Produto → Score → Vídeo → Publicar</p>
+        <p className="text-lg font-black">Iniciar Pipeline</p>
+        <p className="text-sm mt-1 opacity-75">Produto → Score → Criativo → Vídeo</p>
       </Link>
     </div>
   )

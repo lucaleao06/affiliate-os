@@ -124,9 +124,25 @@ export default function DistributePage() {
   return (
     <div className="min-h-screen text-white" style={{ background: 'var(--bg)' }}>
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-bold">Distribuição</h1>
-          <button onClick={() => load().then(pkgs => setPackages(pkgs)).catch(() => null)} className="text-xs text-gray-400 hover:text-white transition">↻ Atualizar</button>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-xl font-bold text-white">Distribuição</h1>
+            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>Pacotes prontos para publicação</p>
+          </div>
+          <button onClick={() => load().then(pkgs => setPackages(pkgs)).catch(() => null)}
+            className="text-xs px-3 py-1.5 rounded-lg transition"
+            style={{ background: 'var(--surface)', color: 'rgba(255,255,255,0.4)', border: '1px solid var(--border)' }}>
+            Atualizar
+          </button>
+        </div>
+
+        {/* SUPERVISED mode banner */}
+        <div className="rounded-xl p-3 mb-4 flex items-start gap-2.5"
+          style={{ background: 'rgba(255,107,53,0.08)', border: '1px solid rgba(255,107,53,0.2)' }}>
+          <span className="text-xs font-semibold mt-0.5" style={{ color: 'var(--brand)' }}>SUPERVISIONADO</span>
+          <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            Publicação requer aprovação manual. Baixe o vídeo, copie a legenda e publique você mesmo no canal desejado.
+          </p>
         </div>
 
         {/* Filter pills */}
@@ -249,45 +265,51 @@ export default function DistributePage() {
                       </div>
                     )}
 
-                    {/* Publish result */}
+                    {/* Actions */}
+                    {/* Manual publication guide when rights not cleared */}
+                    {(pkg.rights_status === 'unknown' || pkg.status === 'pending_rights') && (
+                      <div className="rounded-xl p-3 space-y-1.5"
+                        style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}>
+                        <p className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.5)' }}>PUBLICAÇÃO MANUAL</p>
+                        <ol className="text-xs space-y-1" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                          <li>1. Baixe o MP4 abaixo</li>
+                          <li>2. Copie a legenda + CTA</li>
+                          <li>3. Publique no canal escolhido</li>
+                          <li>4. Confirme direitos de imagem do produto</li>
+                        </ol>
+                      </div>
+                    )}
                     {publishResult && (
-                      <div className="bg-gray-800 rounded-lg p-3 text-xs text-gray-300 whitespace-pre-line">
+                      <div className="rounded-xl p-3 text-xs whitespace-pre-line"
+                        style={{ background: 'var(--surface-2)', color: 'rgba(255,255,255,0.6)' }}>
                         {publishResult}
                       </div>
                     )}
-
-                    {/* Actions */}
                     <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => handlePublish(pkg)}
-                        disabled={publishing || (!pkg.checklist.ready && pkg.rights_status !== 'unknown')}
-                        className="py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-sm font-semibold transition"
-                      >
-                        {publishing ? 'Publicando...' : 'PUBLICAR'}
-                      </button>
-                      <button
-                        onClick={() => copyCaption(pkg)}
-                        className="py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm font-semibold transition"
-                      >
-                        COPIAR LEGENDA
-                      </button>
                       {pkg.download_url && (
-                        <a
-                          href={pkg.download_url}
-                          download={pkg.video_filename}
-                          className="py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-sm font-semibold transition text-center"
-                        >
-                          DOWNLOAD
+                        <a href={pkg.download_url} download={pkg.video_filename}
+                          className="py-2.5 rounded-xl text-sm font-semibold transition text-center"
+                          style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
+                          Baixar MP4
                         </a>
                       )}
+                      <button onClick={() => copyCaption(pkg)}
+                        className="py-2.5 rounded-xl text-sm font-semibold transition"
+                        style={{ background: 'var(--surface-2)', color: 'rgba(255,255,255,0.7)', border: '1px solid var(--border)' }}>
+                        Copiar legenda
+                      </button>
+                      {pkg.checklist.ready && pkg.rights_status !== 'unknown' && (
+                        <button onClick={() => handlePublish(pkg)} disabled={publishing}
+                          className="col-span-2 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-40"
+                          style={{ background: 'var(--brand)', color: '#fff' }}>
+                          {publishing ? 'Publicando...' : 'Publicar via API'}
+                        </button>
+                      )}
                       {pkg.published_url && (
-                        <a
-                          href={pkg.published_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-sm font-semibold transition text-center"
-                        >
-                          VER POST
+                        <a href={pkg.published_url} target="_blank" rel="noreferrer"
+                          className="col-span-2 py-2.5 rounded-xl text-sm font-semibold transition text-center"
+                          style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
+                          Ver publicação
                         </a>
                       )}
                     </div>
