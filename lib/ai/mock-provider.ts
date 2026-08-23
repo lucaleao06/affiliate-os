@@ -41,6 +41,12 @@ export class MockProvider implements AIProvider {
     if (input.rating) parts.push(`nota ${input.rating}/5`)
     if (input.reviewCount) parts.push(`${input.reviewCount} avaliações`)
 
+    // Estimativa de comissão por venda (hipótese, não receita garantida)
+    const totalRate = (input.commissionRate ?? 0) + (input.extraCommission ?? 0)
+    const estimatedCommissionPerSale = input.price && totalRate > 0
+      ? Math.round(input.price * (totalRate / 100) * 100) / 100
+      : undefined
+
     return {
       overallScore: overall,
       recommendation: overall >= 75 ? 'TESTE IMEDIATAMENTE' : overall >= 55 ? 'VALE TESTAR' : overall >= 35 ? 'BAIXA PRIORIDADE' : 'EVITAR',
@@ -56,6 +62,8 @@ export class MockProvider implements AIProvider {
       reasoning: `Score calculado localmente com base em dados reais: ${parts.join(', ') || 'dados insuficientes'}. Configure ANTHROPIC_API_KEY para análise por IA.`,
       provider: 'local',
       model: 'data-driven-v1',
+      estimatedCommissionPerSale,
+      dataPoints: parts,
     }
   }
 
@@ -161,6 +169,15 @@ export class MockProvider implements AIProvider {
         : `${title}${priceStr ? ` — ${priceStr}` : ''}. Dados e link na descrição. #shopee #afiliados`,
     ]
 
+    // Evidence: fatos verificáveis usados para gerar este criativo
+    const evidence: string[] = []
+    if (priceStr) evidence.push(`preço: ${priceStr}`)
+    if (product.rating) evidence.push(`nota: ${product.rating}/5`)
+    if (product.reviewCount) evidence.push(`avaliações: ${product.reviewCount.toLocaleString('pt-BR')}`)
+    if (product.soldCount) evidence.push(`vendidos: ${product.soldCount.toLocaleString('pt-BR')}`)
+    if (commStr) evidence.push(commStr)
+    if (hasDiscount && discountPct) evidence.push(`desconto real: ${discountPct}% (preço original verificado)`)
+
     return {
       hooks,
       angles,
@@ -169,6 +186,7 @@ export class MockProvider implements AIProvider {
       captions,
       provider: 'local',
       model: 'data-driven-v1',
+      evidence,
     }
   }
 
@@ -227,7 +245,7 @@ export class MockProvider implements AIProvider {
           duration: '5s',
           visual: `Logo Shopee + imagem do produto + seta ou indicação visual para o link na bio/descrição.`,
           voiceover: `Link na descrição para conferir na Shopee.`,
-          text_overlay: '👆 LINK NA DESCRIÇÃO',
+          text_overlay: 'LINK NA DESCRIÇÃO',
         },
       ],
       musicSuggestion: 'Música de fundo instrumental — sem letra (evita copyright). Sugestão: buscar "background music no copyright upbeat" no YouTube Audio Library.',

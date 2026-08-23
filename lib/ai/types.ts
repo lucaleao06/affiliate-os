@@ -27,6 +27,10 @@ export interface ScoreOutput {
   reasoning: string
   provider: string
   model: string
+  /** Comissão bruta estimada por venda (hipótese — não é receita garantida) */
+  estimatedCommissionPerSale?: number
+  /** Dados usados no cálculo — rastreabilidade */
+  dataPoints?: string[]
 }
 
 export interface CreativeOutput {
@@ -37,6 +41,8 @@ export interface CreativeOutput {
   captions: string[]
   provider: string
   model: string
+  /** Fatos do produto usados para gerar este criativo */
+  evidence: string[]
 }
 
 export interface StoryboardScene {

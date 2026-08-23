@@ -12,17 +12,17 @@ const PERIOD_OPTIONS = [
 ]
 
 const TYPE_CONFIG: Record<string, { icon: string; label: string; color: string; bg: string }> = {
-  winner:          { icon: '🏆', label: 'Vencedor',        color: '#fbbf24', bg: 'rgba(251,191,36,0.1)' },
-  rising:          { icon: '📈', label: 'Acelerando',      color: '#4ade80', bg: 'rgba(74,222,128,0.08)' },
-  scale_now:       { icon: '🚀', label: 'Escalar agora',   color: '#34d399', bg: 'rgba(52,211,153,0.1)' },
-  top_product:     { icon: '⭐', label: 'Produto top',     color: '#a78bfa', bg: 'rgba(167,139,250,0.08)' },
-  top_creative:    { icon: '🎬', label: 'Criativo top',    color: '#60a5fa', bg: 'rgba(96,165,250,0.08)' },
-  top_channel:     { icon: '📡', label: 'Canal top',       color: '#38bdf8', bg: 'rgba(56,189,248,0.08)' },
-  falling:         { icon: '📉', label: 'Caindo',          color: '#f87171', bg: 'rgba(248,113,113,0.08)' },
-  loser:           { icon: '⚠️', label: 'Baixo retorno',   color: '#fb923c', bg: 'rgba(251,146,60,0.08)' },
-  pause_now:       { icon: '⏸️', label: 'Pausar',          color: '#f87171', bg: 'rgba(248,113,113,0.1)' },
-  low_conversion:  { icon: '🔻', label: 'Conv. baixa',     color: '#fb923c', bg: 'rgba(251,146,60,0.08)' },
-  no_data:         { icon: '📭', label: 'Sem dados',       color: 'rgba(255,255,255,0.4)', bg: 'transparent' },
+  winner:          { icon: 'W',  label: 'Vencedor',        color: '#fbbf24', bg: 'rgba(251,191,36,0.1)' },
+  rising:          { icon: '↑',  label: 'Acelerando',      color: '#4ade80', bg: 'rgba(74,222,128,0.08)' },
+  scale_now:       { icon: '↑↑', label: 'Escalar agora',   color: '#34d399', bg: 'rgba(52,211,153,0.1)' },
+  top_product:     { icon: 'P',  label: 'Produto top',     color: '#a78bfa', bg: 'rgba(167,139,250,0.08)' },
+  top_creative:    { icon: 'C',  label: 'Criativo top',    color: '#60a5fa', bg: 'rgba(96,165,250,0.08)' },
+  top_channel:     { icon: 'Ch', label: 'Canal top',       color: '#38bdf8', bg: 'rgba(56,189,248,0.08)' },
+  falling:         { icon: '↓',  label: 'Caindo',          color: '#f87171', bg: 'rgba(248,113,113,0.08)' },
+  loser:           { icon: '!',  label: 'Baixo retorno',   color: '#fb923c', bg: 'rgba(251,146,60,0.08)' },
+  pause_now:       { icon: '||', label: 'Pausar',          color: '#f87171', bg: 'rgba(248,113,113,0.1)' },
+  low_conversion:  { icon: '↓',  label: 'Conv. baixa',     color: '#fb923c', bg: 'rgba(251,146,60,0.08)' },
+  no_data:         { icon: '–',  label: 'Sem dados',       color: 'rgba(255,255,255,0.4)', bg: 'transparent' },
 }
 
 const ACTION_CONFIG: Record<RecommendedAction, { label: string; href?: string; color: string }> = {
@@ -214,7 +214,8 @@ export default function GrowthPage() {
       {/* No data state */}
       {noData && !error && (
         <div className="rounded-2xl p-8 text-center space-y-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <p className="text-4xl">📭</p>
+          <div className="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center text-lg font-bold"
+            style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.3)' }}>–</div>
           <div>
             <p className="text-base font-bold text-white">Sem dados suficientes</p>
             <p className="text-sm mt-1 leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
@@ -225,12 +226,12 @@ export default function GrowthPage() {
             <Link href="/sales/import"
               className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-sm transition-all active:scale-95"
               style={{ background: 'rgba(255,107,53,0.15)', color: 'var(--brand)', border: '1px solid rgba(255,107,53,0.3)' }}>
-              📊 Importar CSV Shopee
+              Importar CSV Shopee
             </Link>
             <Link href="/products"
               className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-sm transition-all active:scale-95"
               style={{ background: 'var(--surface-2)', color: 'rgba(255,255,255,0.6)', border: '1px solid var(--border)' }}>
-              🔍 Adicionar produtos
+              Adicionar produtos
             </Link>
           </div>
         </div>
@@ -257,7 +258,7 @@ export default function GrowthPage() {
 
           {/* Total commission */}
           {report.summary.totalCommission > 0 && (
-            <div className="rounded-2xl p-4" style={{ background: 'linear-gradient(135deg, rgba(255,107,53,0.15), rgba(255,107,53,0.05))', border: '1px solid rgba(255,107,53,0.25)' }}>
+            <div className="rounded-2xl p-4" style={{ background: 'rgba(255,107,53,0.08)', border: '1px solid rgba(255,107,53,0.25)' }}>
               <p className="text-xs mb-1" style={{ color: 'rgba(255,255,255,0.5)' }}>Comissão total no período</p>
               <p className="text-3xl font-black text-white">{fmt(report.summary.totalCommission)}</p>
               <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{report.summary.totalOrders} pedidos · últimos {period}d</p>

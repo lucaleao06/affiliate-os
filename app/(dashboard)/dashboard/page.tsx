@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { PipelineWidget } from '@/components/pipeline-widget'
 
 interface Stats {
   products: number
@@ -10,18 +11,17 @@ interface Stats {
   creatives: { pending: number; approved: number; rejected: number; total: number }
 }
 
-function StatCard({ icon, label, value, href, accent }: {
-  icon: string; label: string; value: string | number; href: string; accent?: boolean
+function StatCard({ label, value, href, accent }: {
+  label: string; value: string | number; href: string; accent?: boolean
 }) {
   return (
     <Link href={href}>
       <div className="rounded-2xl p-4 active:scale-95 transition-transform cursor-pointer"
         style={{
-          background: accent ? 'linear-gradient(135deg, rgba(255,107,53,0.18), rgba(255,107,53,0.06))' : 'var(--surface)',
+          background: accent ? 'rgba(255,107,53,0.09)' : 'var(--surface)',
           border: `1px solid ${accent ? 'rgba(255,107,53,0.35)' : 'var(--border)'}`,
         }}>
-        <div className="text-2xl mb-2">{icon}</div>
-        <div className="text-2xl font-black text-white">{value}</div>
+        <div className="text-2xl font-semibold text-white pt-2">{value}</div>
         <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>{label}</div>
       </div>
     </Link>
@@ -31,12 +31,28 @@ function StatCard({ icon, label, value, href, accent }: {
 export default function DashboardHome() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
+
+  const loadDashboard = () => {
+    setLoading(true)
+    setLoadError(false)
+    fetch('/api/dashboard')
+      .then(async r => {
+        if (!r.ok) throw new Error('dashboard_unavailable')
+        return r.json()
+      })
+      .then((d: Stats) => { setStats(d); setLoading(false) })
+      .catch(() => { setLoadError(true); setLoading(false) })
+  }
 
   useEffect(() => {
     fetch('/api/dashboard')
-      .then(r => r.json())
+      .then(async r => {
+        if (!r.ok) throw new Error('dashboard_unavailable')
+        return r.json()
+      })
       .then((d: Stats) => { setStats(d); setLoading(false) })
-      .catch(() => setLoading(false))
+      .catch(() => { setLoadError(true); setLoading(false) })
   }, [])
 
   const s = stats
@@ -67,6 +83,13 @@ export default function DashboardHome() {
           <span className="text-xs px-2.5 py-1 rounded-full" style={{ background: 'rgba(255,107,53,0.12)', color: 'var(--brand)' }}>Supervisionado</span>
         </div>
       </div>
+
+      {loadError && (
+        <div className="rounded-xl px-4 py-3 flex items-center justify-between gap-3" style={{ background: 'rgba(255,107,53,0.08)', border: '1px solid rgba(255,107,53,0.24)' }}>
+          <p className="text-xs leading-5" style={{ color: 'rgba(255,255,255,0.66)' }}>Não foi possível atualizar os dados agora. Nenhuma métrica foi estimada.</p>
+          <button type="button" onClick={loadDashboard} className="min-h-11 px-3 rounded-lg text-xs font-semibold shrink-0" style={{ color: 'var(--brand)', background: 'rgba(255,107,53,0.10)' }}>Tentar de novo</button>
+        </div>
+      )}
 
       {/* Winners — action items */}
       {s && s.creatives.pending > 0 && (
@@ -101,13 +124,15 @@ export default function DashboardHome() {
           </>
         ) : (
           <>
-            <StatCard icon="□" label="Produtos" value={s?.products ?? '—'} href="/products" />
-            <StatCard icon="＋" label="Campanhas" value={s?.campaigns ?? '—'} href="/products" />
-            <StatCard icon="↗" label="Score médio" value={s ? `${s.avgScore}/100` : '—'} href="/products" accent={!!(s && s.avgScore >= 70)} />
-            <StatCard icon="●" label="Taxa aprovação" value={approvalRate !== null ? `${approvalRate}%` : '—'} href="/queue" accent={!!(approvalRate && approvalRate >= 60)} />
+            <StatCard label="Produtos" value={s?.products ?? '—'} href="/products" />
+            <StatCard label="Campanhas" value={s?.campaigns ?? '—'} href="/products" />
+            <StatCard label="Score médio" value={s ? `${s.avgScore}/100` : '—'} href="/products" accent={!!(s && s.avgScore >= 70)} />
+            <StatCard label="Taxa aprovação" value={approvalRate !== null ? `${approvalRate}%` : '—'} href="/queue" accent={!!(approvalRate && approvalRate >= 60)} />
           </>
         )}
       </div>
+
+      {s && <PipelineWidget products={s.products} avgScore={s.avgScore} pending={s.creatives.pending} approved={s.creatives.approved} />}
 
       {/* Criativo breakdown */}
       {s && s.creatives.total > 0 && (
@@ -145,47 +170,26 @@ export default function DashboardHome() {
         <Link href="/video-factory"
           className="flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-sm transition-all active:scale-95"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'rgba(255,255,255,0.8)' }}>
-          🎬 Vídeo
+          Produzir vídeo
         </Link>
       </div>
 
-      {/* Growth + Autopilot promo */}
       <div className="grid grid-cols-2 gap-3">
         <Link href="/growth">
           <div className="rounded-2xl p-4 active:scale-95 transition-transform h-full"
-            style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)' }}>
-            <span className="text-2xl">📈</span>
-            <p className="text-sm font-semibold text-white mt-2">Growth</p>
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <p className="text-sm font-semibold text-white">Growth</p>
             <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>Winners e insights</p>
           </div>
         </Link>
         <Link href="/autopilot">
           <div className="rounded-2xl p-4 active:scale-95 transition-transform h-full"
-            style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)' }}>
-            <span className="text-2xl">🤖</span>
-            <p className="text-sm font-semibold text-white mt-2">Autopilot</p>
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <p className="text-sm font-semibold text-white">Autopilot</p>
             <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>Automação da IA</p>
           </div>
         </Link>
       </div>
-
-      {/* Legacy autopilot promo — replaced above, keeping structure */}
-      <Link href="/autopilot" className="hidden">
-        <div className="rounded-2xl p-4 flex items-center gap-4 active:scale-95 transition-transform"
-          style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)' }}>
-          <span className="text-3xl">🤖</span>
-          <div>
-            <p className="text-sm font-semibold text-white">Autopilot</p>
-            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              Configure o nível de automação da IA
-            </p>
-          </div>
-          <span className="ml-auto text-xs px-2 py-1 rounded-full font-medium"
-            style={{ background: 'rgba(139,92,246,0.2)', color: '#a78bfa' }}>
-            PAUSED
-          </span>
-        </div>
-      </Link>
 
     </div>
   )

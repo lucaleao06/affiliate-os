@@ -33,7 +33,7 @@ interface ModeConfig {
 const MODES: ModeConfig[] = [
   {
     mode: 'PAUSED',
-    icon: '⏸️',
+    icon: '||',
     label: 'Pausado',
     description: 'Nenhuma etapa avança por regra automática. Você inicia e aprova cada ação.',
     color: 'rgba(255,255,255,0.6)',
@@ -49,7 +49,7 @@ const MODES: ModeConfig[] = [
   },
   {
     mode: 'SUPERVISED',
-    icon: '👁️',
+    icon: 'S',
     label: 'Supervisionado',
     description: 'O sistema prepara e valida a operação. Você mantém a decisão final em cada etapa.',
     color: '#60a5fa',
@@ -66,7 +66,7 @@ const MODES: ModeConfig[] = [
   },
   {
     mode: 'AUTOPILOT',
-    icon: '🤖',
+    icon: 'A',
     label: 'Autopilot',
     description: 'Motor de regras preparado. Permanece bloqueado até canais e direitos serem validados.',
     color: '#a78bfa',
@@ -85,12 +85,12 @@ const MODES: ModeConfig[] = [
 ]
 
 const PIPELINE_STEPS = [
-  { label: 'Produto', icon: '📦', auto: { PAUSED: false, SUPERVISED: false, AUTOPILOT: false } },
-  { label: 'Score', icon: '⭐', auto: { PAUSED: false, SUPERVISED: false, AUTOPILOT: true } },
-  { label: 'Criativo', icon: '✍️', auto: { PAUSED: false, SUPERVISED: false, AUTOPILOT: true } },
-  { label: 'Aprovação', icon: '✅', auto: { PAUSED: false, SUPERVISED: false, AUTOPILOT: true } },
-  { label: 'Storyboard', icon: '📋', auto: { PAUSED: false, SUPERVISED: false, AUTOPILOT: true } },
-  { label: 'Render', icon: '🎬', auto: { PAUSED: false, SUPERVISED: false, AUTOPILOT: true } },
+  { label: 'Produto', icon: 'P', auto: { PAUSED: false, SUPERVISED: false, AUTOPILOT: false } },
+  { label: 'Score', icon: 'S', auto: { PAUSED: false, SUPERVISED: false, AUTOPILOT: true } },
+  { label: 'Criativo', icon: 'C', auto: { PAUSED: false, SUPERVISED: false, AUTOPILOT: true } },
+  { label: 'Aprov.', icon: 'A', auto: { PAUSED: false, SUPERVISED: false, AUTOPILOT: true } },
+  { label: 'Story', icon: 'St', auto: { PAUSED: false, SUPERVISED: false, AUTOPILOT: true } },
+  { label: 'Render', icon: 'R', auto: { PAUSED: false, SUPERVISED: false, AUTOPILOT: true } },
 ]
 
 const CHANNELS = ['manual', 'instagram', 'tiktok', 'youtube_shorts', 'shopee_video']
@@ -255,7 +255,7 @@ export default function AutopilotPage() {
                       {active && m.warning && (
                         <p className="mt-3 text-xs rounded-lg px-3 py-2"
                           style={{ background: 'rgba(234,179,8,0.1)', color: '#fbbf24', border: '1px solid rgba(234,179,8,0.2)' }}>
-                          ⚠️ {m.warning}
+                          {m.warning}
                         </p>
                       )}
                     </div>
@@ -390,7 +390,7 @@ export default function AutopilotPage() {
               color: saved ? '#4ade80' : 'white',
               border: saved ? '2px solid rgba(34,197,94,0.4)' : 'none',
             }}>
-            {saving ? '⏳ Salvando...' : saved ? '✅ Salvo!' : 'Salvar configuração'}
+            {saving ? 'Salvando...' : saved ? 'Salvo!' : 'Salvar configuração'}
           </button>
 
           <p className="text-center text-xs pb-2" style={{ color: 'rgba(255,255,255,0.2)' }}>

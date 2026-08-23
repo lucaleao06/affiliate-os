@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdmin } from '@/lib/supabase/server'
 import { getAIProvider } from '@/lib/ai'
 import type { ScoreInput, ScoreOutput } from '@/lib/ai'
+import { runClaimGuard } from '@/lib/ai/claim-guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -108,6 +109,16 @@ export async function POST(req: NextRequest) {
 
     if (anglesErr) return NextResponse.json({ error: anglesErr.message }, { status: 500 })
 
+    // Claim guard — validate each creative before inserting
+    const claimResults = creatives.hooks.slice(0, 3).map((hook, i) =>
+      runClaimGuard({
+        hook,
+        ...(creatives.scripts[i] ? { script: creatives.scripts[i] } : {}),
+        ...(creatives.captions[i] ? { caption: creatives.captions[i] } : {}),
+      })
+    )
+    const totalViolations = claimResults.flatMap(r => r.violations)
+
     // Create one pending creative per hook (first 3)
     const creativesToInsert = creatives.hooks.slice(0, 3).map((hook, i) => ({
       campaign_id: campaign.id,
@@ -116,6 +127,7 @@ export async function POST(req: NextRequest) {
       script: creatives.scripts[i] ?? null,
       caption: creatives.captions[i] ?? null,
       cta: creatives.ctas[i] ?? null,
+      // Creatives with claim violations go to 'pending' but are flagged via metadata
       status: 'pending' as const,
     }))
 
@@ -132,7 +144,18 @@ export async function POST(req: NextRequest) {
       angle: (creatives.angles as string[])[i] ?? `Variação ${i + 1}`,
     }))
 
-    return NextResponse.json({ campaign, angles, creatives: enrichedCreatives, raw: creatives })
+    return NextResponse.json({
+      campaign,
+      angles,
+      creatives: enrichedCreatives,
+      raw: creatives,
+      claimGuard: {
+        passed: totalViolations.length === 0,
+        violationCount: totalViolations.length,
+        violations: totalViolations,
+        perCreative: claimResults,
+      },
+    })
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }

@@ -7,9 +7,9 @@ interface HojeData {
   date: string
   autopilotMode: string
   autopilotEnabled: boolean
-  generated: { count: number; failed: number; items: Array<{ id: string; filename?: string; durationSec?: number; downloadUrl?: string }> }
+  generated: { count: number; countToday: number; failed: number; items: Array<{ id: string; filename?: string; durationSec?: number; downloadUrl?: string }> }
   awaitingApproval: { count: number; items: Array<{ id: string; hook: string; product?: string }> }
-  published: { count: number; items: Array<{ id: string; channel: string; url?: string }> }
+  published: { count: number; countToday: number; items: Array<{ id: string; channel: string; url?: string }> }
   sales: { count: number; commission: number; revenue: number }
   winners: { count: number; items: Array<{ title: string; body: string; at: string }> }
   errors: { count: number; items: Array<{ title: string; body: string; at: string }> }
@@ -142,8 +142,11 @@ export default function HojePage() {
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           <p className="text-3xl font-black" style={{ color: 'rgba(255,255,255,0.9)' }}>{data.generated.count}</p>
           <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>Vídeos gerados</p>
+          {data.generated.countToday > 0 && (
+            <p className="text-[10px] mt-0.5" style={{ color: 'var(--brand)' }}>{data.generated.countToday} hoje</p>
+          )}
           {data.generated.failed > 0 && (
-            <p className="text-[10px] mt-1" style={{ color: '#ef4444' }}>{data.generated.failed} com erro</p>
+            <p className="text-[10px] mt-0.5" style={{ color: '#ef4444' }}>{data.generated.failed} com erro</p>
           )}
         </Link>
 
@@ -162,6 +165,9 @@ export default function HojePage() {
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           <p className="text-3xl font-black" style={{ color: 'rgba(255,255,255,0.9)' }}>{data.published.count}</p>
           <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>Publicados</p>
+          {data.published.countToday > 0 && (
+            <p className="text-[10px] mt-0.5" style={{ color: 'var(--brand)' }}>{data.published.countToday} hoje</p>
+          )}
         </Link>
 
         <Link href="/notifications"

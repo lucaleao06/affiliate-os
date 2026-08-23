@@ -16,8 +16,10 @@ export async function GET() {
 
   const [
     { data: renders },
+    { data: allRenders },
     { data: pendingCreatives },
     { data: publishedPkgs },
+    { data: allPublishedPkgs },
     { data: todaySales },
     { data: recentNotifs },
     { data: autopilotRules },
@@ -28,6 +30,12 @@ export async function GET() {
       .eq('type', 'video_render')
       .gte('created_at', todayIso)
       .order('created_at', { ascending: false }),
+
+    // Total renders lifetime (for consistent "vídeos gerados" count)
+    admin.from('automation_runs')
+      .select('id, status')
+      .eq('type', 'video_render')
+      .eq('status', 'completed'),
 
     // Creatives awaiting approval (all pending; filter [MOCK] in JS to handle NULL hooks)
     admin.from('creatives')
@@ -42,6 +50,11 @@ export async function GET() {
       .eq('status', 'published')
       .gte('published_at', todayIso)
       .order('published_at', { ascending: false }),
+
+    // Total published lifetime
+    admin.from('publication_packages')
+      .select('id')
+      .eq('status', 'published'),
 
     // Sales today
     admin.from('sales')
@@ -76,6 +89,7 @@ export async function GET() {
 
   const rendersOk = (renders ?? []).filter(r => r.status === 'completed')
   const rendersFailed = (renders ?? []).filter(r => r.status === 'failed')
+  const totalRendersOk = (allRenders ?? []).length
 
   // Filter [MOCK] legacy creatives in JS (Supabase .not() excludes NULL hooks too)
   interface PendingCreative { id: string; hook: string | null; script: string | null; status: string; campaigns: { products: { title: string } | null } | null }
@@ -88,7 +102,8 @@ export async function GET() {
     autopilotMode: autopilotRules?.mode ?? 'PAUSED',
     autopilotEnabled: autopilotRules?.enabled ?? false,
     generated: {
-      count: rendersOk.length,
+      count: totalRendersOk,       // lifetime total — fonte de verdade
+      countToday: rendersOk.length, // apenas hoje
       failed: rendersFailed.length,
       items: rendersOk.slice(0, 5).map(r => ({
         id: r.id,
@@ -106,7 +121,8 @@ export async function GET() {
       })),
     },
     published: {
-      count: (publishedPkgs ?? []).length,
+      count: (allPublishedPkgs ?? []).length, // lifetime total
+      countToday: (publishedPkgs ?? []).length, // apenas hoje
       items: (publishedPkgs ?? []).map(p => ({
         id: p.id, channel: p.channel, url: p.published_url,
       })),
