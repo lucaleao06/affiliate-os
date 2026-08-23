@@ -44,7 +44,15 @@ export default function VideoFactoryPage() {
   useEffect(() => {
     fetch('/api/video-factory')
       .then(r => r.json())
-      .then((d: { creatives: Creative[] }) => setCreatives(d.creatives ?? []))
+      .then((d: {
+        creatives: Creative[]
+        storyboards?: Record<string, StoryboardOutput>
+        renders?: Record<string, RenderResult>
+      }) => {
+        setCreatives(d.creatives ?? [])
+        if (d.storyboards) setStoryboards(d.storyboards)
+        if (d.renders) setRenders(d.renders)
+      })
       .catch(() => setError('Erro ao carregar criativos aprovados'))
       .finally(() => setLoading(false))
   }, [])
@@ -186,6 +194,12 @@ export default function VideoFactoryPage() {
                       🔄 Re-render
                     </button>
                   </div>
+                  {/* Next step prompt */}
+                  <a href="/distribute"
+                    className="mt-3 flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all active:scale-95"
+                    style={{ background: 'rgba(255,107,53,0.18)', color: 'var(--brand)', border: '1px solid rgba(255,107,53,0.35)' }}>
+                    📦 Ver na Distribuição →
+                  </a>
                 </div>
               )}
 
@@ -216,6 +230,12 @@ export default function VideoFactoryPage() {
                       style={{ background: 'var(--surface-2)', color: 'rgba(255,255,255,0.5)' }}>
                       {sb.format}
                     </span>
+                    {sb.provider === 'local' && (
+                      <span className="text-xs px-2 py-0.5 rounded-full"
+                        style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                        Rascunho baseado em dados
+                      </span>
+                    )}
                   </div>
                   {/* Scenes — vertical list on mobile */}
                   <div className="space-y-2">

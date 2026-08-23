@@ -7,12 +7,47 @@ export const dynamic = 'force-dynamic'
 
 export async function GET() {
   const admin = createAdmin()
-  const { data } = await admin
+  const { data: creatives } = await admin
     .from('creatives')
     .select('id, hook, script, status, campaigns(name, products(id, title, price, commission_rate, image_url))')
     .eq('status', 'approved')
     .order('updated_at', { ascending: false })
-  return NextResponse.json({ creatives: data ?? [] })
+
+  // Load persisted storyboards and renders so the UI survives navigation
+  const { data: runs } = await admin
+    .from('automation_runs')
+    .select('type, input, output, created_at')
+    .in('type', ['video_storyboard', 'video_render'])
+    .eq('status', 'completed')
+    .order('created_at', { ascending: false })
+    .limit(100)
+
+  const storyboards: Record<string, unknown> = {}
+  const renders: Record<string, unknown> = {}
+  for (const run of (runs ?? [])) {
+    const cid = (run.input as Record<string, string>)?.creativeId
+    if (!cid) continue
+    if (run.type === 'video_storyboard' && !storyboards[cid]) {
+      storyboards[cid] = run.output
+    }
+    if (run.type === 'video_render' && !renders[cid]) {
+      const o = run.output as Record<string, unknown>
+      renders[cid] = {
+        status: 'completed',
+        runId: '',
+        filename: o.filename,
+        downloadUrl: o.downloadUrl,
+        durationSec: o.durationSec,
+        width: o.width,
+        height: o.height,
+        codec: o.codec,
+        fileSizeBytes: o.fileSizeBytes,
+        renderMs: 0, // not stored; use 0 for historical runs
+      }
+    }
+  }
+
+  return NextResponse.json({ creatives: creatives ?? [], storyboards, renders })
 }
 
 export async function POST(req: NextRequest) {

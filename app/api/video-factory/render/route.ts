@@ -3,7 +3,9 @@ import { createAdmin } from '@/lib/supabase/server'
 import { renderVideo } from '@/lib/render/ffmpeg'
 import { saveCaptions } from '@/lib/render/captions'
 import { buildContentPackage, saveContentPackage } from '@/lib/render/content-package'
+import { buildPublicationChecklist } from '@/lib/publish'
 import type { StoryboardOutput } from '@/lib/ai'
+import type { PublicationChannel, RightsStatus } from '@/lib/publish'
 
 export const dynamic = 'force-dynamic'
 // Render can take time — allow up to 5 min
@@ -98,6 +100,63 @@ export async function POST(req: NextRequest) {
       codec: result.codec,
     })
     try { saveContentPackage(pkg) } catch { /* non-fatal */ }
+
+    // Auto-create publication package so /distribute immediately shows the render
+    try {
+      const affiliateUrl = (product?.affiliate_url as string | null) ?? null
+      const channel: PublicationChannel = 'manual'
+      const rightsStatus: RightsStatus = 'unknown'
+      const pubChecklist = buildPublicationChecklist({
+        id: '',
+        creativeId: body.creativeId,
+        productId: (product?.id as string | undefined) ?? '',
+        campaignId: (creative.campaigns as { id?: string } | null)?.id ?? '',
+        videoPath: result.outputPath,
+        videoFilename: result.filename,
+        downloadUrl,
+        srtPath,
+        caption: (creative.caption as string | null) ?? '',
+        cta: (creative.cta as string | null) ?? '',
+        affiliateUrl,
+        channel,
+        rightsStatus,
+        durationSec: result.durationSec,
+        fileSizeBytes: result.fileSizeBytes,
+        width: result.width,
+        height: result.height,
+        codec: result.codec,
+        generatedAt: new Date().toISOString(),
+        scheduledAt: null,
+        publishedAt: null,
+        publishedUrl: null,
+      })
+      const pubStatus = pubChecklist.ready ? 'ready'
+        : rightsStatus === 'unknown' ? 'pending_rights' : 'draft'
+      await admin.from('publication_packages').insert({
+        creative_id: body.creativeId,
+        product_id: (product?.id as string | undefined) ?? null,
+        campaign_id: (creative.campaigns as { id?: string } | null)?.id ?? null,
+        video_path: result.outputPath,
+        video_filename: result.filename,
+        download_url: downloadUrl,
+        srt_path: srtPath,
+        caption: (creative.caption as string | null) ?? '',
+        cta: (creative.cta as string | null) ?? '',
+        affiliate_url: affiliateUrl,
+        channel,
+        rights_status: rightsStatus,
+        duration_sec: result.durationSec,
+        file_size_bytes: result.fileSizeBytes,
+        width: result.width,
+        height: result.height,
+        codec: result.codec,
+        checklist: pubChecklist,
+        status: pubStatus,
+        status_reason: pubChecklist.failReasons.join('; ') || null,
+      })
+    } catch (pkgErr) {
+      console.warn('[video-factory/render] publication_packages insert failed (non-fatal):', pkgErr)
+    }
 
     // Fire render_completed notification
     await admin.from('notifications').insert({
