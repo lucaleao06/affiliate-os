@@ -22,6 +22,8 @@
     // Price: look for structured price elements
     const priceEl =
       document.querySelector('._3n5NQx') ||   // main price span
+      document.querySelector('.pyzxvq.pw3J3G') || // Shopee product price (2026 layout)
+      document.querySelector('.PcnXj1') ||        // Shopee product price fallback
       document.querySelector('[class*="price"]')
     const priceText = priceEl?.textContent?.replace(/[^0-9,.]/g, '').replace(',', '.') || ''
     const price = parseFloat(priceText) || 0
@@ -31,8 +33,13 @@
       document.querySelector('._3XEBOt img') ||
       document.querySelector('[class*="mainImage"] img') ||
       document.querySelector('._3cUJSf img') ||
-      document.querySelector('img[class*="product"]')
-    const imageUrl = imgEl?.src || ''
+      document.querySelector('img[class*="product"]') ||
+      document.querySelector('img[alt^="Imagem do produto"]')
+    const imageUrl =
+      imgEl?.currentSrc ||
+      imgEl?.src ||
+      document.querySelector('meta[property="og:image"]')?.getAttribute('content') ||
+      ''
 
     return { title, price, imageUrl, url }
   }

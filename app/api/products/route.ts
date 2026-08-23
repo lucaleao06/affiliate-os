@@ -160,6 +160,10 @@ export async function PATCH(req: NextRequest) {
       commission_rate?: number
       category?: string
       image_url?: string
+      original_price?: number
+      rating?: number | null
+      review_count?: number
+      sold_count?: number
     }
 
     if (!body.id) {
@@ -168,6 +172,18 @@ export async function PATCH(req: NextRequest) {
 
     if (body.price !== undefined && !validMoney(body.price)) {
       return NextResponse.json({ error: 'price must be a non-negative number' }, { status: 400 })
+    }
+    if (body.original_price !== undefined && !validMoney(body.original_price)) {
+      return NextResponse.json({ error: 'original_price must be a non-negative number' }, { status: 400 })
+    }
+    if (body.rating !== undefined && body.rating !== null && (!validMoney(body.rating) || body.rating > 5)) {
+      return NextResponse.json({ error: 'rating must be between 0 and 5' }, { status: 400 })
+    }
+    if (body.review_count !== undefined && (!Number.isInteger(body.review_count) || body.review_count < 0)) {
+      return NextResponse.json({ error: 'review_count must be a non-negative integer' }, { status: 400 })
+    }
+    if (body.sold_count !== undefined && (!Number.isInteger(body.sold_count) || body.sold_count < 0)) {
+      return NextResponse.json({ error: 'sold_count must be a non-negative integer' }, { status: 400 })
     }
     if (body.cost !== undefined && body.cost !== null && !validMoney(body.cost)) {
       return NextResponse.json({ error: 'cost must be a non-negative number' }, { status: 400 })
@@ -180,6 +196,7 @@ export async function PATCH(req: NextRequest) {
     if (body.title !== undefined) updates.title = body.title.trim()
     if (body.description !== undefined) updates.description = body.description.trim()
     if (body.price !== undefined) updates.price = body.price
+    if (body.original_price !== undefined) updates.original_price = body.original_price
     if (body.cost !== undefined) updates.cost = body.cost
     if (body.checkout_url !== undefined) updates.checkout_url = body.checkout_url.trim()
     if (body.margin_pct !== undefined) updates.margin_pct = body.margin_pct
@@ -187,6 +204,9 @@ export async function PATCH(req: NextRequest) {
     if (body.commission_rate !== undefined) updates.commission_rate = body.commission_rate
     if (body.category !== undefined) updates.category = body.category.trim()
     if (body.image_url !== undefined) updates.image_url = body.image_url.trim()
+    if (body.rating !== undefined) updates.rating = body.rating
+    if (body.review_count !== undefined) updates.review_count = body.review_count
+    if (body.sold_count !== undefined) updates.sold_count = body.sold_count
 
     const admin = createAdmin()
     const { data, error } = await admin

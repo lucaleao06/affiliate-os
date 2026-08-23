@@ -65,9 +65,10 @@ export default function RevenuePage() {
               <button
                 key={p}
                 onClick={() => { setLoading(true); setPeriod(p) }}
-                className={`text-xs px-3 py-1.5 rounded-full border transition ${
-                  period === p ? 'bg-white text-gray-900 border-white' : 'border-gray-700 text-gray-400 hover:border-gray-500'
-                }`}
+                className="text-xs px-3 py-1.5 rounded-full border transition"
+                style={period === p
+                  ? { background: 'rgba(255,255,255,0.9)', color: '#0d0d1a', borderColor: 'rgba(255,255,255,0.9)' }
+                  : { borderColor: 'var(--border)', color: 'rgba(255,255,255,0.4)' }}
               >
                 {p === 'today' ? 'Hoje' : p === 'all' ? 'Tudo' : p}
               </button>
@@ -78,9 +79,9 @@ export default function RevenuePage() {
         {loading ? (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              {[0,1,2,3].map(i => <div key={i} className="h-20 rounded-xl animate-pulse bg-gray-900 border border-gray-800" />)}
+              {[0,1,2,3].map(i => <div key={i} className="h-20 rounded-xl animate-pulse" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }} />)}
             </div>
-            {[0,1].map(i => <div key={i} className="h-28 rounded-xl animate-pulse bg-gray-900 border border-gray-800" />)}
+            {[0,1].map(i => <div key={i} className="h-28 rounded-xl animate-pulse" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }} />)}
           </div>
         ) : !data || data.isEmpty ? (
           <div className="text-center py-20">
@@ -119,7 +120,7 @@ export default function RevenuePage() {
                 <p className="text-xs mb-3 uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>Status dos pedidos</p>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(data.statusBreakdown).map(([st, count]) => (
-                    <span key={st} className="text-xs px-3 py-1 rounded-full bg-gray-800 text-gray-300">
+                    <span key={st} className="text-xs px-3 py-1 rounded-full" style={{ background: 'var(--surface-2)', color: 'rgba(255,255,255,0.6)' }}>
                       {st}: <span className="font-semibold text-white">{count}</span>
                     </span>
                   ))}
@@ -130,7 +131,7 @@ export default function RevenuePage() {
             {/* Top products */}
             {data.topProducts.length > 0 && (
               <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                <p className="text-xs mb-3 uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>🏆 Produtos top</p>
+                <p className="text-xs mb-3 uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>Produtos top</p>
                 <div className="space-y-2">
                   {data.topProducts.map((p, i) => (
                     <div key={p.id ?? i} className="flex items-center justify-between">
@@ -151,7 +152,7 @@ export default function RevenuePage() {
             {/* Top channels */}
             {data.topChannels.length > 0 && (
               <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                <p className="text-xs mb-3 uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>📡 Canal top</p>
+                <p className="text-xs mb-3 uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>Canal top</p>
                 <div className="space-y-2">
                   {data.topChannels.map((c, i) => (
                     <div key={c.channel ?? i} className="flex items-center justify-between">
@@ -172,7 +173,7 @@ export default function RevenuePage() {
             {/* Top creatives */}
             {data.topCreatives.length > 0 && (
               <div className="rounded-xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                <p className="text-xs mb-3 uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>🎬 Criativo top</p>
+                <p className="text-xs mb-3 uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>Criativo top</p>
                 <div className="space-y-2">
                   {data.topCreatives.map((c, i) => (
                     <div key={c.creativeId ?? i} className="flex items-center justify-between">

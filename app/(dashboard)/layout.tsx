@@ -5,29 +5,29 @@ import { usePathname } from 'next/navigation'
 
 // Bottom nav: max 5 items (mobile)
 const bottomNav = [
-  { href: '/dashboard', label: 'Home', icon: '🏠' },
-  { href: '/queue', label: 'Fila', icon: '✅' },
-  { href: '/video-factory', label: 'Vídeos', icon: '🎬' },
-  { href: '/distribute', label: 'Distribuir', icon: '📡' },
+  { href: '/dashboard', label: 'Home', icon: '⌂' },
+  { href: '/queue', label: 'Fila', icon: '□' },
+  { href: '/video-factory', label: 'Vídeos', icon: '▷' },
+  { href: '/distribute', label: 'Distribuir', icon: '↗' },
   { href: '/mais', label: 'Mais', icon: '⋯' },
 ]
 
 // Sidebar: full nav (desktop)
 const sidebarNav = [
-  { href: '/hoje', label: 'Hoje', icon: '📋', group: 'core' },
-  { href: '/dashboard', label: 'Dashboard', icon: '🏠', group: 'core' },
-  { href: '/launch', label: 'Lançar Campanha', icon: '🚀', group: 'core' },
-  { href: '/products', label: 'Produtos', icon: '🔍', group: 'core' },
-  { href: '/products/add-own', label: 'Produto Próprio', icon: '📦', group: 'core' },
-  { href: '/queue', label: 'Fila', icon: '✅', group: 'core' },
-  { href: '/video-factory', label: 'Vídeos', icon: '🎬', group: 'core' },
-  { href: '/distribute', label: 'Distribuição', icon: '📡', group: 'publish' },
-  { href: '/connect', label: 'Conexões', icon: '🔗', group: 'publish' },
-  { href: '/revenue', label: 'Receita', icon: '💰', group: 'analytics' },
-  { href: '/growth', label: 'Growth', icon: '📈', group: 'analytics' },
-  { href: '/notifications', label: 'Notificações', icon: '🔔', group: 'analytics' },
-  { href: '/sales/import', label: 'Importar Vendas', icon: '📊', group: 'analytics' },
-  { href: '/autopilot', label: 'Autopilot', icon: '🤖', group: 'automation' },
+  { href: '/hoje', label: 'Hoje', icon: '□', group: 'core' },
+  { href: '/dashboard', label: 'Dashboard', icon: '⌂', group: 'core' },
+  { href: '/launch', label: 'Lançar Campanha', icon: '＋', group: 'core' },
+  { href: '/products', label: 'Produtos', icon: '⌕', group: 'core' },
+  { href: '/products/add-own', label: 'Produto Próprio', icon: '◇', group: 'core' },
+  { href: '/queue', label: 'Fila', icon: '□', group: 'core' },
+  { href: '/video-factory', label: 'Vídeos', icon: '▷', group: 'core' },
+  { href: '/distribute', label: 'Distribuição', icon: '↗', group: 'publish' },
+  { href: '/connect', label: 'Conexões', icon: '⟡', group: 'publish' },
+  { href: '/revenue', label: 'Receita', icon: 'R$', group: 'analytics' },
+  { href: '/growth', label: 'Growth', icon: '↗', group: 'analytics' },
+  { href: '/notifications', label: 'Notificações', icon: '•', group: 'analytics' },
+  { href: '/sales/import', label: 'Importar Vendas', icon: '↓', group: 'analytics' },
+  { href: '/autopilot', label: 'Autopilot', icon: '◌', group: 'automation' },
 ]
 
 const groups = [
@@ -107,7 +107,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <span className="text-base font-black" style={{ color: 'var(--brand)' }}>Affiliate OS</span>
         <Link href="/notifications" className="text-xs px-2 py-1 rounded-full font-medium"
           style={{ background: 'rgba(255,107,53,0.15)', color: 'var(--brand)' }}>
-          🔔
+          •
         </Link>
       </header>
 

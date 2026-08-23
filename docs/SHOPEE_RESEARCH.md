@@ -58,6 +58,14 @@ Colunas observadas no portal BR:
 - Atribuição criativo → venda futura: via `source_channel` + janela de tempo (não implementado)
 - XLSX export: `app/api/sales/import` aceita `.xlsx` mas parseia como texto — para XLSX real, adicionar SheetJS na rota
 
+### Geração oficial de link + Sub_id (validado no portal em 2026-08-22)
+O fluxo legítimo está em **Oferta → Link personalizado** no Portal de Afiliados autenticado.
+
+- Aceita até **5 URLs Shopee** por vez (produto, loja, campanha, categoria ou página inicial).
+- Aceita até **5 Sub_id(s)** alfanuméricos para rastreamento no próprio link gerado pela Shopee.
+- O Affiliate OS não deve anexar parâmetros manualmente a um link de afiliado já gerado; a conversão deve ocorrer no portal oficial.
+- A Open API do Portal estava indisponível para esta conta (sem AppID/Secret liberados), portanto o produto deve operar pelo portal, extensão local e importação de CSV.
+
 ### Shopee Affiliate API (para lojistas, não afiliados)
 Shopee tem Open Platform API para lojistas (`open.shopee.com`), mas afiliados não têm acesso a esses endpoints.
 

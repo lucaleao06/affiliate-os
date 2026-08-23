@@ -67,11 +67,11 @@ const REC_COLOR: Record<string, string> = {
 function ScoreBar({ value, label }: { value: number; label: string }) {
   return (
     <div className="space-y-1">
-      <div className="flex justify-between text-xs text-gray-400">
+      <div className="flex justify-between text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>
         <span>{label}</span>
         <span>{value}</span>
       </div>
-      <div className="h-1.5 bg-gray-700 rounded-full">
+      <div className="h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
         <div
           className={`h-full rounded-full ${value >= 70 ? 'bg-green-500' : value >= 45 ? 'bg-yellow-500' : 'bg-red-500'}`}
           style={{ width: `${value}%` }}
@@ -89,14 +89,15 @@ function Input({
 }) {
   return (
     <div className="space-y-1">
-      <label className="block text-sm font-medium text-gray-300">
-        {label}{required && <span className="text-orange-400 ml-0.5">*</span>}
+      <label className="block text-sm font-medium" style={{ color: 'rgba(255,255,255,0.7)' }}>
+        {label}{required && <span className="ml-0.5" style={{ color: 'var(--brand)' }}>*</span>}
       </label>
-      {hint && <p className="text-xs text-gray-500">{hint}</p>}
+      {hint && <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{hint}</p>}
       <input
         type={type} value={value} onChange={e => onChange(e.target.value)}
         placeholder={placeholder} required={required}
-        className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/30 transition-colors"
+        className="w-full rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition-colors"
+        style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
       />
     </div>
   )
@@ -220,13 +221,13 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen text-white" style={{ background: 'var(--bg)' }}>
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
 
         {/* Header */}
         <div>
-          <h1 className="text-xl font-bold">🔍 Product Hunter</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Analise produtos Shopee e gere criativos</p>
+          <h1 className="text-xl font-bold">Produtos</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>Analise produtos Shopee e gere criativos</p>
         </div>
 
         {error && (
@@ -241,7 +242,7 @@ export default function ProductsPage() {
         )}
 
         {/* Import Form */}
-        <div className="bg-gray-900 rounded-2xl border border-gray-800 p-5">
+        <div className="rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
           <h2 className="font-semibold mb-4">Adicionar produto</h2>
           <form onSubmit={(e) => { void handleSubmit(e) }} className="space-y-4">
 
@@ -283,14 +284,15 @@ export default function ProductsPage() {
             <button
               type="button"
               onClick={() => setShowAdvanced(v => !v)}
-              className="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-200 transition-colors py-1"
+              className="flex items-center gap-2 text-xs transition-colors py-1"
+              style={{ color: 'rgba(255,255,255,0.4)' }}
             >
               <span className={`transition-transform ${showAdvanced ? 'rotate-90' : ''}`}>▶</span>
               {showAdvanced ? 'Ocultar dados adicionais' : 'Dados adicionais (opcional)'}
             </button>
 
             {showAdvanced && (
-              <div className="space-y-4 pt-1 border-t border-gray-800">
+              <div className="space-y-4 pt-1 border-t" style={{ borderColor: 'var(--border)' }}>
                 <div className="grid grid-cols-2 gap-3">
                   <Input
                     label="Preço original (R$)"
@@ -379,7 +381,7 @@ export default function ProductsPage() {
         {/* Product List */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wide">
+            <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>
               Produtos ({visibleProducts.length})
             </h2>
             {testCount > 0 && (
@@ -395,7 +397,7 @@ export default function ProductsPage() {
                   color: 'rgba(255,255,255,0.4)',
                   border: '1px solid rgba(255,255,255,0.1)',
                 }}>
-                {hideTest ? `⚠️ ${testCount} teste${testCount > 1 ? 's' : ''} oculto${testCount > 1 ? 's' : ''}` : 'Ocultar testes'}
+                {hideTest ? `${testCount} teste${testCount > 1 ? 's' : ''} oculto${testCount > 1 ? 's' : ''}` : 'Ocultar testes'}
               </button>
             )}
           </div>
@@ -403,21 +405,20 @@ export default function ProductsPage() {
           {loading && (
             <div className="space-y-3">
               {[1, 2].map(i => (
-                <div key={i} className="bg-gray-900 rounded-2xl border border-gray-800 p-4 animate-pulse">
-                  <div className="h-4 bg-gray-800 rounded w-2/3 mb-2" />
-                  <div className="h-3 bg-gray-800 rounded w-1/3" />
+                <div key={i} className="rounded-2xl p-4 animate-pulse" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                  <div className="h-4 rounded w-2/3 mb-2" style={{ background: 'var(--surface-2)' }} />
+                  <div className="h-3 rounded w-1/3" style={{ background: 'var(--surface-2)' }} />
                 </div>
               ))}
             </div>
           )}
 
           {!loading && visibleProducts.length === 0 && (
-            <div className="bg-gray-900 rounded-2xl border border-gray-800 p-8 text-center">
-              <p className="text-3xl mb-3">🎯</p>
-              <p className="text-gray-400 text-sm font-medium">
+            <div className="rounded-2xl p-8 text-center" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <p className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.4)' }}>
                 {products.length > 0 && hideTest ? 'Apenas testes cadastrados' : 'Nenhum produto ainda'}
               </p>
-              <p className="text-gray-600 text-xs mt-1">
+              <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.2)' }}>
                 {products.length > 0 && hideTest
                   ? 'Clique em "ocultos" acima para vê-los'
                   : 'Adicione acima ou instale a extensão Chrome'}
@@ -432,7 +433,7 @@ export default function ProductsPage() {
             const isExpanded = expanded === product.id
 
             return (
-              <div key={product.id} className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+              <div key={product.id} className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
                 <div className="p-4 flex gap-3">
                   {product.image_url && (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -459,15 +460,14 @@ export default function ProductsPage() {
                         </div>
                       )}
                     </div>
-                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-xs text-gray-400">
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
                       {product.price && <span>R$ {Number(product.price).toFixed(2)}</span>}
                       {product.commission_rate > 0 && (
                         <span>
-                          📊 {Number(product.commission_rate)}%
-                          {product.extra_commission > 0 && `+${Number(product.extra_commission)}%`}
+                          {Number(product.commission_rate)}%{product.extra_commission > 0 && `+${Number(product.extra_commission)}%`} comissão
                         </span>
                       )}
-                      {product.rating && <span>⭐ {product.rating}</span>}
+                      {product.rating && <span>{product.rating} nota</span>}
                       {product.sold_count > 0 && <span>{product.sold_count.toLocaleString('pt-BR')} vendidos</span>}
                     </div>
                     {score && (
@@ -483,22 +483,25 @@ export default function ProductsPage() {
                   <button
                     onClick={() => { void handleScore(product.id) }}
                     disabled={isScoring}
-                    className="flex-1 min-w-0 text-sm bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 text-white px-3 py-2.5 rounded-xl transition-colors font-medium"
+                    className="flex-1 min-w-0 text-sm disabled:opacity-50 text-white px-3 py-2.5 rounded-xl transition-colors font-medium"
+                    style={{ background: '#3b82f6' }}
                   >
-                    {isScoring ? '⏳ Analisando...' : '🎯 Analisar'}
+                    {isScoring ? 'Analisando...' : 'Analisar'}
                   </button>
                   {score && (
                     <>
                       <button
                         onClick={() => { void handleGenerateCreatives(product.id) }}
                         disabled={isGenerating}
-                        className="flex-1 min-w-0 text-sm bg-purple-600 hover:bg-purple-700 active:bg-purple-800 disabled:opacity-50 text-white px-3 py-2.5 rounded-xl transition-colors font-medium"
+                        className="flex-1 min-w-0 text-sm disabled:opacity-50 text-white px-3 py-2.5 rounded-xl transition-colors font-medium"
+                        style={{ background: '#9333ea' }}
                       >
-                        {isGenerating ? '⏳ Gerando...' : '✨ Criativos'}
+                        {isGenerating ? 'Gerando...' : 'Criativos'}
                       </button>
                       <button
                         onClick={() => setExpanded(isExpanded ? null : product.id)}
-                        className="text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2.5 rounded-xl transition-colors"
+                        className="text-sm px-3 py-2.5 rounded-xl transition-colors"
+                        style={{ background: 'var(--surface-2)', color: 'rgba(255,255,255,0.5)' }}
                         aria-label="Ver score detalhado"
                       >
                         {isExpanded ? '▲' : '▼'}
@@ -510,17 +513,18 @@ export default function ProductsPage() {
                       href={product.affiliate_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-2.5 rounded-xl transition-colors"
+                      className="text-sm px-3 py-2.5 rounded-xl transition-colors"
+                      style={{ background: 'var(--surface-2)', color: 'rgba(255,255,255,0.5)' }}
                       aria-label="Abrir link de afiliado"
                     >
-                      🔗
+                      ↗
                     </a>
                   )}
                 </div>
 
                 {/* Score Details */}
                 {isExpanded && score && (
-                  <div className="px-4 pb-4 border-t border-gray-800 pt-4 space-y-3">
+                  <div className="px-4 pb-4 border-t pt-4 space-y-3" style={{ borderColor: 'var(--border)' }}>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-2">
                       <ScoreBar value={score.commission_score} label="Comissão" />
                       <ScoreBar value={score.demand_score} label="Demanda" />
@@ -529,7 +533,7 @@ export default function ProductsPage() {
                       <ScoreBar value={score.trust_score} label="Confiança" />
                     </div>
                     {score.reasoning && (
-                      <p className="text-xs text-gray-400 bg-gray-800/50 rounded-xl p-3 leading-relaxed">
+                      <p className="text-xs rounded-xl p-3 leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)', background: 'rgba(255,255,255,0.04)' }}>
                         {score.reasoning}
                       </p>
                     )}

@@ -31,7 +31,7 @@ export async function GET() {
 
     // Creatives awaiting approval (all pending; filter [MOCK] in JS to handle NULL hooks)
     admin.from('creatives')
-      .select('id, hook, script, status, campaigns(products(name))')
+      .select('id, hook, script, status, campaigns(products(title))')
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
       .limit(30),
@@ -78,7 +78,7 @@ export async function GET() {
   const rendersFailed = (renders ?? []).filter(r => r.status === 'failed')
 
   // Filter [MOCK] legacy creatives in JS (Supabase .not() excludes NULL hooks too)
-  interface PendingCreative { id: string; hook: string | null; script: string | null; status: string; campaigns: { products: { name: string } | null } | null }
+  interface PendingCreative { id: string; hook: string | null; script: string | null; status: string; campaigns: { products: { title: string } | null } | null }
   const realPending = ((pendingCreatives as unknown as PendingCreative[]) ?? []).filter(c =>
     !c.hook?.includes('[MOCK]') && !c.script?.includes('[MOCK]')
   )
@@ -102,7 +102,7 @@ export async function GET() {
       items: realPending.slice(0, 3).map(c => ({
         id: c.id,
         hook: c.hook,
-        product: ((c.campaigns as unknown as { products: { name: string } | null } | null)?.products?.name) ?? null,
+        product: ((c.campaigns as unknown as { products: { title: string } | null } | null)?.products?.title) ?? null,
       })),
     },
     published: {

@@ -47,25 +47,24 @@ export default function DashboardHome() {
   return (
     <div className="p-4 md:p-6 space-y-5 max-w-2xl">
 
-      {/* Hero — "Estou ganhando dinheiro?" */}
-      <div className="rounded-2xl p-5 relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #FF6B35 0%, #e55a25 100%)' }}>
-        <div className="absolute inset-0 opacity-10"
-          style={{ background: 'radial-gradient(circle at 80% 20%, #fff 0%, transparent 60%)' }} />
-        <div className="relative">
-          <p className="text-sm font-medium text-orange-100 mb-1">Affiliate OS · Shopee</p>
-          <h1 className="text-3xl font-black text-white leading-tight">
+      <div className="rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: 'var(--brand)' }}>Operação Shopee</p>
+          <h1 className="text-3xl font-semibold text-white leading-tight">
             {s ? (
               s.creatives.approved > 0
-                ? '🚀 Pipeline ativo'
-                : '⚡ Configure seu primeiro produto'
+                ? 'Produção em andamento'
+                : 'Escolha o próximo produto'
             ) : '...'}
           </h1>
-          <p className="text-sm text-orange-100 mt-1">
+          <p className="text-sm mt-2" style={{ color: 'rgba(255,255,255,0.48)' }}>
             {s
               ? `${s.creatives.approved} criativo${s.creatives.approved !== 1 ? 's' : ''} aprovado${s.creatives.approved !== 1 ? 's' : ''} · score médio ${s.avgScore}/100`
               : 'Carregando...'}
           </p>
+          </div>
+          <span className="text-xs px-2.5 py-1 rounded-full" style={{ background: 'rgba(255,107,53,0.12)', color: 'var(--brand)' }}>Supervisionado</span>
         </div>
       </div>
 
@@ -74,7 +73,7 @@ export default function DashboardHome() {
         <Link href="/queue">
           <div className="rounded-2xl p-4 flex items-center gap-4 active:scale-95 transition-transform"
             style={{ background: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.3)' }}>
-            <span className="text-3xl">⏳</span>
+            <span className="text-xl" style={{ color: '#eab308' }}>●</span>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-white">
                 {s.creatives.pending} criativo{s.creatives.pending > 1 ? 's' : ''} esperando sua decisão
@@ -83,7 +82,7 @@ export default function DashboardHome() {
                 Aprove para liberar para produção de vídeo
               </p>
             </div>
-            <span className="text-2xl">→</span>
+            <span className="text-lg">→</span>
           </div>
         </Link>
       )}
@@ -102,10 +101,10 @@ export default function DashboardHome() {
           </>
         ) : (
           <>
-            <StatCard icon="📦" label="Produtos" value={s?.products ?? '—'} href="/products" />
-            <StatCard icon="🎯" label="Campanhas" value={s?.campaigns ?? '—'} href="/products" />
-            <StatCard icon="⭐" label="Score médio" value={s ? `${s.avgScore}/100` : '—'} href="/products" accent={!!(s && s.avgScore >= 70)} />
-            <StatCard icon="✅" label="Taxa aprovação" value={approvalRate !== null ? `${approvalRate}%` : '—'} href="/queue" accent={!!(approvalRate && approvalRate >= 60)} />
+            <StatCard icon="□" label="Produtos" value={s?.products ?? '—'} href="/products" />
+            <StatCard icon="＋" label="Campanhas" value={s?.campaigns ?? '—'} href="/products" />
+            <StatCard icon="↗" label="Score médio" value={s ? `${s.avgScore}/100` : '—'} href="/products" accent={!!(s && s.avgScore >= 70)} />
+            <StatCard icon="●" label="Taxa aprovação" value={approvalRate !== null ? `${approvalRate}%` : '—'} href="/queue" accent={!!(approvalRate && approvalRate >= 60)} />
           </>
         )}
       </div>
@@ -150,8 +149,28 @@ export default function DashboardHome() {
         </Link>
       </div>
 
-      {/* Autopilot promo */}
-      <Link href="/autopilot">
+      {/* Growth + Autopilot promo */}
+      <div className="grid grid-cols-2 gap-3">
+        <Link href="/growth">
+          <div className="rounded-2xl p-4 active:scale-95 transition-transform h-full"
+            style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)' }}>
+            <span className="text-2xl">📈</span>
+            <p className="text-sm font-semibold text-white mt-2">Growth</p>
+            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>Winners e insights</p>
+          </div>
+        </Link>
+        <Link href="/autopilot">
+          <div className="rounded-2xl p-4 active:scale-95 transition-transform h-full"
+            style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)' }}>
+            <span className="text-2xl">🤖</span>
+            <p className="text-sm font-semibold text-white mt-2">Autopilot</p>
+            <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>Automação da IA</p>
+          </div>
+        </Link>
+      </div>
+
+      {/* Legacy autopilot promo — replaced above, keeping structure */}
+      <Link href="/autopilot" className="hidden">
         <div className="rounded-2xl p-4 flex items-center gap-4 active:scale-95 transition-transform"
           style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)' }}>
           <span className="text-3xl">🤖</span>
