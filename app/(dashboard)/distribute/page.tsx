@@ -314,7 +314,13 @@ export default function DistributePage() {
                         {pkg.rights_status === 'unknown' && (
                           <span className="text-xs px-2 py-0.5 rounded-full"
                             style={{ background: 'rgba(251,191,36,0.1)', color: '#fbbf24' }}>
-                            direitos pendentes
+                            confirmar direitos
+                          </span>
+                        )}
+                        {pkg.rights_status === 'owned' && (
+                          <span className="text-xs px-2 py-0.5 rounded-full"
+                            style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e' }}>
+                            produto próprio
                           </span>
                         )}
                       </div>

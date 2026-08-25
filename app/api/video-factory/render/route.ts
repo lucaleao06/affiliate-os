@@ -103,9 +103,16 @@ export async function POST(req: NextRequest) {
 
     // Auto-create publication package so /distribute immediately shows the render
     try {
-      const affiliateUrl = (product?.affiliate_url as string | null) ?? null
+      const affiliateUrl = (product?.affiliate_url as string | null)
+        ?? (product?.checkout_url as string | null)
+        ?? null
       const channel: PublicationChannel = 'manual'
-      const rightsStatus: RightsStatus = 'unknown'
+      // Owned products have rights cleared by definition — the creator IS the rights holder.
+      // Affiliate products start as 'unknown' until the seller provides confirmation.
+      const isOwnedProduct =
+        (product?.product_type as string | undefined) === 'owned' ||
+        (product?.marketplace as string | undefined) === 'owned'
+      const rightsStatus: RightsStatus = isOwnedProduct ? 'owned' : 'unknown'
       const pubChecklist = buildPublicationChecklist({
         id: '',
         creativeId: body.creativeId,
