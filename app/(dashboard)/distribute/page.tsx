@@ -148,6 +148,8 @@ export default function DistributePage() {
   const [publishResult, setPublishResult] = useState<string | null>(null)
   const [filter, setFilter] = useState<string>('all')
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [markingReadyId, setMarkingReadyId] = useState<string | null>(null)
+  const [markError, setMarkError] = useState<string | null>(null)
 
   const load = useCallback((): Promise<PublicationPackage[]> => {
     const url = filter === 'all' ? '/api/publish' : `/api/publish?status=${filter}`
@@ -184,6 +186,35 @@ export default function DistributePage() {
       load().then(pkgs => setPackages(pkgs)).catch(() => null)
     } finally {
       setPublishing(false)
+    }
+  }
+
+  async function handleMarkReady(pkg: PublicationPackage) {
+    setMarkingReadyId(pkg.id)
+    setMarkError(null)
+    try {
+      const res = await fetch('/api/publish', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: pkg.id, rights_status: 'cleared', status: 'ready' }),
+      })
+      const json = await res.json() as { package?: PublicationPackage; error?: string }
+      if (!res.ok || json.error) {
+        setMarkError(json.error ?? 'Erro ao marcar como pronto')
+      } else {
+        // Update local state without refetching
+        setPackages(prev => prev.map(p => p.id === pkg.id
+          ? { ...p, rights_status: 'cleared', status: 'ready', checklist: json.package?.checklist ?? p.checklist }
+          : p
+        ))
+        if (selected?.id === pkg.id && json.package) {
+          setSelected(json.package)
+        }
+      }
+    } catch {
+      setMarkError('Falha na conexão')
+    } finally {
+      setMarkingReadyId(null)
     }
   }
 
@@ -311,6 +342,18 @@ export default function DistributePage() {
                           style={{ background: statusCfg.bg, color: statusCfg.color }}>
                           {statusCfg.label}
                         </span>
+                        {pkg.rights_status === 'pending_rights' && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                            style={{ background: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)' }}>
+                            ⏳ direitos pendentes
+                          </span>
+                        )}
+                        {pkg.rights_status === 'cleared' && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                            style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}>
+                            ✓ direitos ok
+                          </span>
+                        )}
                         {pkg.rights_status === 'unknown' && (
                           <span className="text-xs px-2 py-0.5 rounded-full"
                             style={{ background: 'rgba(251,191,36,0.1)', color: '#fbbf24' }}>
@@ -430,6 +473,13 @@ export default function DistributePage() {
                       </div>
                     )}
 
+                    {markError && selected?.id === pkg.id && (
+                      <div className="rounded-xl p-3 text-xs"
+                        style={{ background: 'rgba(248,113,113,0.08)', color: '#f87171', border: '1px solid rgba(248,113,113,0.2)' }}>
+                        {markError}
+                      </div>
+                    )}
+
                     {/* Actions */}
                     <div className="grid grid-cols-2 gap-2.5">
                       {pkg.download_url && (
@@ -461,6 +511,15 @@ export default function DistributePage() {
                         }}>
                         {copiedId === `all-${pkg.id}` ? 'Copiado!' : 'Copiar legenda + CTA + link'}
                       </button>
+                      {pkg.rights_status === 'pending_rights' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); void handleMarkReady(pkg) }}
+                          disabled={markingReadyId === pkg.id}
+                          className="col-span-2 py-3.5 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-40"
+                          style={{ background: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.3)' }}>
+                          {markingReadyId === pkg.id ? 'Marcando...' : '✓ Marcar como Pronto'}
+                        </button>
+                      )}
                       {pkg.checklist.ready && pkg.rights_status !== 'unknown' && (
                         <button onClick={() => handlePublish(pkg)} disabled={publishing}
                           className="col-span-2 py-3.5 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-40"

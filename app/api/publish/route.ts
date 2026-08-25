@@ -164,3 +164,63 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ error: 'unknown action' }, { status: 400 })
 }
+
+export async function PATCH(req: NextRequest) {
+  const admin = createAdmin()
+  const body = await req.json() as { id: string; rights_status?: string; status?: string }
+
+  if (!body.id) return NextResponse.json({ error: 'id required' }, { status: 400 })
+
+  const { data: pkg, error: fetchErr } = await admin
+    .from('publication_packages')
+    .select('*')
+    .eq('id', body.id)
+    .single()
+
+  if (fetchErr || !pkg) return NextResponse.json({ error: 'package not found' }, { status: 404 })
+
+  // Rebuild checklist with updated rights_status so rightsCleared reflects the change
+  const newRightsStatus = (body.rights_status ?? pkg.rights_status) as RightsStatus
+  const rebuilt = buildPublicationChecklist({
+    id: pkg.id as string,
+    creativeId: pkg.creative_id as string,
+    productId: pkg.product_id as string,
+    campaignId: pkg.campaign_id as string,
+    videoPath: pkg.video_path as string,
+    videoFilename: pkg.video_filename as string,
+    downloadUrl: pkg.download_url as string,
+    srtPath: pkg.srt_path as string | null,
+    caption: pkg.caption as string,
+    cta: pkg.cta as string,
+    affiliateUrl: pkg.affiliate_url as string | null,
+    channel: pkg.channel as PublicationChannel,
+    rightsStatus: newRightsStatus,
+    durationSec: pkg.duration_sec as number,
+    fileSizeBytes: pkg.file_size_bytes as number,
+    width: pkg.width as number,
+    height: pkg.height as number,
+    codec: pkg.codec as string,
+    generatedAt: pkg.created_at as string,
+    scheduledAt: null,
+    publishedAt: null,
+    publishedUrl: pkg.published_url as string | null,
+  })
+
+  const newStatus = body.status ?? (rebuilt.ready ? 'ready' : pkg.status)
+
+  const { data: updated, error: updateErr } = await admin
+    .from('publication_packages')
+    .update({
+      rights_status: newRightsStatus,
+      status: newStatus,
+      checklist: rebuilt,
+      status_reason: rebuilt.failReasons.join('; ') || null,
+    })
+    .eq('id', body.id)
+    .select()
+    .single()
+
+  if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 })
+
+  return NextResponse.json({ package: updated })
+}

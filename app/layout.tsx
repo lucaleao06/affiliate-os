@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist } from 'next/font/google'
+import { SwRegister } from '@/components/sw-register'
 import './globals.css'
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR" className={`${geist.variable} h-full`}>
       <body className="min-h-full text-white antialiased" style={{ background: 'var(--bg)' }}>
+        <SwRegister />
         {children}
       </body>
     </html>
