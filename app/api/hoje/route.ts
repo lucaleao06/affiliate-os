@@ -18,6 +18,7 @@ export async function GET() {
     { data: renders },
     { data: allRenders },
     { data: pendingCreatives },
+    { data: approvedCreatives },
     { data: publishedPkgs },
     { data: allPublishedPkgs },
     { data: todaySales },
@@ -44,6 +45,11 @@ export async function GET() {
       .order('created_at', { ascending: false })
       .limit(30),
 
+    // Approved creatives (not yet rendered)
+    admin.from('creatives')
+      .select('id')
+      .eq('status', 'approved'),
+
     // Packages published today
     admin.from('publication_packages')
       .select('id, channel, status, published_at, published_url')
@@ -56,10 +62,10 @@ export async function GET() {
       .select('id')
       .eq('status', 'published'),
 
-    // Sales today
+    // Sales today — column is occurred_at (not order_date)
     admin.from('sales')
       .select('id, commission_value, gross_value, status')
-      .gte('order_date', todayIso)
+      .gte('occurred_at', todayIso)
       .neq('status', 'cancelled'),
 
     // Recent notifications (last 24h)
@@ -112,6 +118,7 @@ export async function GET() {
         downloadUrl: (r.output as Record<string, unknown>)?.downloadUrl,
       })),
     },
+    approvedCreatives: (approvedCreatives ?? []).length,
     awaitingApproval: {
       count: realPending.length,
       items: realPending.slice(0, 3).map(c => ({

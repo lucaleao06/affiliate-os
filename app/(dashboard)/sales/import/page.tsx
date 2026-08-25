@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 interface ImportPreview {
   columns: string[]
@@ -28,6 +28,17 @@ interface ImportResult {
   warnings: string[]
 }
 
+interface BatchHistory {
+  id: string
+  filename: string
+  row_count: number
+  imported?: number
+  skipped?: number
+  errors?: number
+  status: string
+  created_at: string
+}
+
 function fmt(n: number) {
   return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
@@ -42,6 +53,14 @@ export default function SalesImportPage() {
   const [result, setResult] = useState<ImportResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [step, setStep] = useState<'upload' | 'preview' | 'done'>('upload')
+  const [batches, setBatches] = useState<BatchHistory[]>([])
+
+  useEffect(() => {
+    fetch('/api/sales/import')
+      .then(r => r.json() as Promise<{ batches: BatchHistory[] }>)
+      .then(j => setBatches(j.batches ?? []))
+      .catch(() => {})
+  }, [])
 
   async function handleFile(file: File) {
     setError(null)
@@ -115,7 +134,7 @@ export default function SalesImportPage() {
               onDrop={onDrop}
               onClick={() => fileRef.current?.click()}
             >
-              <div className="text-4xl mb-3">📄</div>
+              <div className="w-11 h-14 rounded-lg border mx-auto mb-4" style={{ borderColor: 'rgba(255,255,255,0.24)', background: 'var(--surface)' }} />
               <p className="font-medium text-white">Arraste o CSV do Shopee aqui</p>
               <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.35)' }}>ou clique para selecionar · somente .csv ou .tsv</p>
               <input
@@ -146,23 +165,24 @@ export default function SalesImportPage() {
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div>
                   <p className="text-2xl font-bold">{preview.totalRows}</p>
-                  <p className="text-xs text-gray-500">linhas</p>
+                  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.38)' }}>linhas</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-emerald-400">{fmt(preview.totalCommission)}</p>
-                  <p className="text-xs text-gray-500">comissão total</p>
+                  <p className="text-2xl font-bold" style={{ color: '#34d399' }}>{fmt(preview.totalCommission)}</p>
+                  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.38)' }}>comissão total</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{preview.columns.length}</p>
-                  <p className="text-xs text-gray-500">colunas</p>
+                  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.38)' }}>colunas</p>
                 </div>
               </div>
             </div>
 
             {preview.warnings.length > 0 && (
-              <div className="bg-yellow-900/20 border border-yellow-800 rounded-xl p-3">
+              <div className="rounded-xl p-3"
+                style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)' }}>
                 {preview.warnings.map((w, i) => (
-                  <p key={i} className="text-xs text-yellow-400">⚠ {w}</p>
+                  <p key={i} className="text-xs" style={{ color: '#fbbf24' }}>Atenção: {w}</p>
                 ))}
               </div>
             )}
@@ -189,7 +209,7 @@ export default function SalesImportPage() {
                         <p className="truncate" style={{ color: 'rgba(255,255,255,0.7)' }}>{row.product_name ?? '—'}</p>
                         <p style={{ color: 'rgba(255,255,255,0.3)' }}>{row.order_id} · {row.occurred_at?.slice(0, 10)} · {row.status}</p>
                       </div>
-                      <span className="flex-shrink-0 font-semibold text-emerald-400">
+                      <span className="flex-shrink-0 font-semibold" style={{ color: '#34d399' }}>
                         {fmt(row.commission_value ?? 0)}
                       </span>
                     </div>
@@ -226,13 +246,13 @@ export default function SalesImportPage() {
               style={result.status === 'completed'
                 ? { background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }
                 : { background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-              <div className="text-4xl mb-3">{result.status === 'completed' ? '✅' : '⚠️'}</div>
+              <div className="w-10 h-10 rounded-full mx-auto mb-3" style={{ background: result.status === 'completed' ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)' }} />
               <p className="font-bold text-lg text-white">
                 {result.status === 'completed' ? 'Importação concluída' : 'Importação com erros'}
               </p>
               <div className="grid grid-cols-3 gap-4 mt-4 text-center">
                 <div>
-                  <p className="text-2xl font-bold text-emerald-400">{result.imported}</p>
+                  <p className="text-2xl font-bold" style={{ color: '#34d399' }}>{result.imported}</p>
                   <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>importados</p>
                 </div>
                 <div>
@@ -251,14 +271,50 @@ export default function SalesImportPage() {
                 style={{ border: '1px solid var(--border)', color: 'rgba(255,255,255,0.6)', background: 'transparent' }}>
                 Nova importação
               </button>
-              <a href="/revenue" className="flex-1 py-3 rounded-xl text-sm font-semibold transition text-center block text-white"
-                style={{ background: 'rgba(34,197,94,0.2)', border: '1px solid rgba(34,197,94,0.3)', color: '#4ade80' }}>
-                Ver receita →
+              <a href="/sales" className="flex-1 py-3 rounded-xl text-sm font-semibold transition text-center block"
+                style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', color: '#4ade80' }}>
+                Ver vendas
               </a>
             </div>
           </div>
         )}
       </div>
+
+      {/* Import history */}
+      {batches.length > 0 && (
+        <div className="mt-6 space-y-3">
+          <h2 className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            Importações anteriores
+          </h2>
+          <div className="space-y-2">
+            {batches.map(b => {
+              const ok = b.status === 'completed'
+              const failed = b.status === 'failed'
+              return (
+                <div key={b.id} className="rounded-xl px-4 py-3 flex items-center gap-3"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                    style={{
+                      background: ok ? 'rgba(74,222,128,0.1)' : failed ? 'rgba(248,113,113,0.1)' : 'rgba(251,191,36,0.1)',
+                      color: ok ? '#4ade80' : failed ? '#f87171' : '#fbbf24',
+                    }}>
+                    {ok ? 'OK' : failed ? 'ERRO' : 'PROC'}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm truncate" style={{ color: 'rgba(255,255,255,0.7)' }}>{b.filename}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                      {b.imported ?? b.row_count} linhas · {new Date(b.created_at).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                  {b.skipped != null && b.skipped > 0 && (
+                    <span className="text-xs flex-shrink-0" style={{ color: '#fbbf24' }}>{b.skipped} ignorados</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -4,11 +4,97 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { PipelineWidget } from '@/components/pipeline-widget'
 
+interface RadarOpp {
+  id: string
+  title: string
+  imageUrl: string | null
+  aiScore: number
+  commissionRate: number
+  commissionValue: number
+  tier: string
+  tierLabel: string
+  tierColor: string
+  tierBg: string
+  hasCampaign: boolean
+}
+
+function RadarWidget() {
+  const [opps, setOpps] = useState<RadarOpp[]>([])
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/radar')
+      .then(r => r.json() as Promise<{ opportunities: RadarOpp[] }>)
+      .then(d => {
+        const top = (d.opportunities ?? [])
+          .filter(o => o.tier === 'now' || o.tier === 'test')
+          .slice(0, 3)
+        setOpps(top)
+        setLoaded(true)
+      })
+      .catch(() => setLoaded(true))
+  }, [])
+
+  if (!loaded) return (
+    <div className="rounded-2xl p-4 animate-pulse" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+      <div className="h-3 w-1/3 rounded mb-3" style={{ background: 'rgba(255,255,255,0.06)' }} />
+      <div className="space-y-2">
+        {[0,1].map(i => <div key={i} className="h-12 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)' }} />)}
+      </div>
+    </div>
+  )
+
+  if (opps.length === 0) return null
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+      <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--brand)' }}>Radar — promover agora</p>
+        <Link href="/radar" className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>Ver todos →</Link>
+      </div>
+      <div className="px-4 pb-4 space-y-2">
+        {opps.map(o => (
+          <Link key={o.id} href={o.hasCampaign ? `/queue` : `/launch?productId=${o.id}`}>
+            <div className="flex items-center gap-3 p-3 rounded-xl active:scale-[0.98] transition-all"
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+              {o.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={o.imageUrl} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
+              ) : (
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                  style={{ background: 'rgba(255,107,53,0.12)', color: 'var(--brand)' }}>
+                  {(o.title ?? '?').slice(0, 2).toUpperCase()}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-white truncate">{o.title}</p>
+                <p className="text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  {o.commissionRate}% comissão · score {o.aiScore}/100
+                </p>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 font-semibold"
+                style={{ background: o.tierBg, color: o.tierColor }}>
+                {o.tierLabel}
+              </span>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 interface Stats {
   products: number
   campaigns: number
   avgScore: number
+  commissionToday: number
+  salesCountToday: number
   creatives: { pending: number; approved: number; rejected: number; total: number }
+}
+
+function fmt(n: number) {
+  return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
 function StatCard({ label, value, href, accent }: {
@@ -39,9 +125,9 @@ export default function DashboardHome() {
     fetch('/api/dashboard')
       .then(async r => {
         if (!r.ok) throw new Error('dashboard_unavailable')
-        return r.json()
+        return r.json() as Promise<Stats>
       })
-      .then((d: Stats) => { setStats(d); setLoading(false) })
+      .then(d => { setStats(d); setLoading(false) })
       .catch(() => { setLoadError(true); setLoading(false) })
   }
 
@@ -49,9 +135,9 @@ export default function DashboardHome() {
     fetch('/api/dashboard')
       .then(async r => {
         if (!r.ok) throw new Error('dashboard_unavailable')
-        return r.json()
+        return r.json() as Promise<Stats>
       })
-      .then((d: Stats) => { setStats(d); setLoading(false) })
+      .then(d => { setStats(d); setLoading(false) })
       .catch(() => { setLoadError(true); setLoading(false) })
   }, [])
 
@@ -114,7 +200,7 @@ export default function DashboardHome() {
       <div className="grid grid-cols-2 gap-3">
         {loading ? (
           <>
-            {[0,1,2,3].map(i => (
+            {[0,1,2,3,4,5].map(i => (
               <div key={i} className="rounded-2xl p-4 animate-pulse h-24" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
                 <div className="w-8 h-8 rounded-lg mb-2" style={{ background: 'rgba(255,255,255,0.06)' }} />
                 <div className="h-6 w-10 rounded mb-1" style={{ background: 'rgba(255,255,255,0.08)' }} />
@@ -124,6 +210,8 @@ export default function DashboardHome() {
           </>
         ) : (
           <>
+            <StatCard label="Comissão hoje" value={s ? fmt(s.commissionToday) : '—'} href="/revenue" accent={!!(s && s.commissionToday > 0)} />
+            <StatCard label="Vendas hoje" value={s?.salesCountToday ?? '—'} href="/sales" accent={!!(s && s.salesCountToday > 0)} />
             <StatCard label="Produtos" value={s?.products ?? '—'} href="/products" />
             <StatCard label="Campanhas" value={s?.campaigns ?? '—'} href="/products" />
             <StatCard label="Score médio" value={s ? `${s.avgScore}/100` : '—'} href="/products" accent={!!(s && s.avgScore >= 70)} />
@@ -131,6 +219,8 @@ export default function DashboardHome() {
           </>
         )}
       </div>
+
+      <RadarWidget />
 
       {s && <PipelineWidget products={s.products} avgScore={s.avgScore} pending={s.creatives.pending} approved={s.creatives.approved} />}
 
@@ -153,9 +243,9 @@ export default function DashboardHome() {
             )}
           </div>
           <div className="flex gap-4 mt-3 text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-500" />Aprovados <strong className="text-white">{s.creatives.approved}</strong></span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-500" />Pendentes <strong className="text-white">{s.creatives.pending}</strong></span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500" />Rejeitados <strong className="text-white">{s.creatives.rejected}</strong></span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#22c55e' }} />Aprovados <strong className="text-white">{s.creatives.approved}</strong></span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#eab308' }} />Pendentes <strong className="text-white">{s.creatives.pending}</strong></span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: '#ef4444' }} />Rejeitados <strong className="text-white">{s.creatives.rejected}</strong></span>
           </div>
         </div>
       )}

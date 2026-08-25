@@ -57,25 +57,23 @@ const EMPTY_FORM: ProductForm = {
   category: '', rating: '', reviewCount: '', soldCount: '', description: '',
 }
 
-const REC_COLOR: Record<string, string> = {
-  'TESTE IMEDIATAMENTE': 'bg-green-500/20 text-green-400 border-green-500/30',
-  'VALE TESTAR': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  'BAIXA PRIORIDADE': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  'EVITAR': 'bg-red-500/20 text-red-400 border-red-500/30',
+const REC_CFG: Record<string, { bg: string; color: string; border: string }> = {
+  'TESTE IMEDIATAMENTE': { bg: 'rgba(34,197,94,0.12)',  color: '#4ade80', border: 'rgba(34,197,94,0.25)' },
+  'VALE TESTAR':         { bg: 'rgba(96,165,250,0.12)', color: '#60a5fa', border: 'rgba(96,165,250,0.25)' },
+  'BAIXA PRIORIDADE':    { bg: 'rgba(251,191,36,0.10)', color: '#fbbf24', border: 'rgba(251,191,36,0.25)' },
+  'EVITAR':              { bg: 'rgba(248,113,113,0.10)', color: '#f87171', border: 'rgba(248,113,113,0.25)' },
 }
 
 function ScoreBar({ value, label }: { value: number; label: string }) {
+  const barColor = value >= 70 ? '#4ade80' : value >= 45 ? '#fbbf24' : '#f87171'
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>
         <span>{label}</span>
-        <span>{value}</span>
+        <span style={{ color: barColor, fontWeight: 600 }}>{value}</span>
       </div>
       <div className="h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.08)' }}>
-        <div
-          className={`h-full rounded-full ${value >= 70 ? 'bg-green-500' : value >= 45 ? 'bg-yellow-500' : 'bg-red-500'}`}
-          style={{ width: `${value}%` }}
-        />
+        <div className="h-full rounded-full transition-all" style={{ width: `${value}%`, background: barColor }} />
       </div>
     </div>
   )
@@ -103,10 +101,13 @@ function Input({
   )
 }
 
+type TypeFilter = 'all' | 'affiliate' | 'owned'
+
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [hideTest, setHideTest] = useState(true)
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [form, setForm] = useState<ProductForm>(EMPTY_FORM)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -119,8 +120,22 @@ export default function ProductsPage() {
   /** Produtos com títulos de teste — ocultos da view comercial por padrão */
   const TEST_PATTERN = /^\[(TESTE|TEST)\]/i
   const isTestProduct = (p: Product) => TEST_PATTERN.test(p.title) || p.title === 'Produto Shopee'
-  const visibleProducts = hideTest ? products.filter(p => !isTestProduct(p)) : products
+  const withoutTests = hideTest ? products.filter(p => !isTestProduct(p)) : products
+  const unsortedVisible = typeFilter === 'all'
+    ? withoutTests
+    : typeFilter === 'owned'
+      ? withoutTests.filter(p => p.marketplace === 'owned')
+      : withoutTests.filter(p => p.marketplace !== 'owned')
+
+  // Sort: scored products by score desc, unscored at end
+  const visibleProducts = [...unsortedVisible].sort((a, b) => {
+    const sa = a.product_scores?.[0]?.overall_score ?? -1
+    const sb = b.product_scores?.[0]?.overall_score ?? -1
+    return sb - sa
+  })
   const testCount = products.filter(isTestProduct).length
+  const ownedCount = withoutTests.filter(p => p.marketplace === 'owned').length
+  const affiliateCount = withoutTests.filter(p => p.marketplace !== 'owned').length
 
   const fetchProducts = useCallback((): Promise<Product[]> =>
     fetch('/api/products')
@@ -178,6 +193,9 @@ export default function ProductsPage() {
     }
   }
 
+  const [bulkScoring, setBulkScoring] = useState(false)
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null)
+
   const handleScore = async (productId: string) => {
     setScoringId(productId)
     setError(null)
@@ -197,6 +215,30 @@ export default function ProductsPage() {
     } finally {
       setScoringId(null)
     }
+  }
+
+  const handleBulkScore = async () => {
+    const unscored = visibleProducts.filter(p => !p.product_scores?.length)
+    if (unscored.length === 0) return
+    setBulkScoring(true)
+    setBulkProgress({ done: 0, total: unscored.length })
+    setError(null)
+    let done = 0
+    for (const p of unscored) {
+      try {
+        await fetch('/api/score', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ productId: p.id }),
+        })
+      } catch { /* continue */ }
+      done++
+      setBulkProgress({ done, total: unscored.length })
+    }
+    const fresh = await fetchProducts().catch(() => [] as Product[])
+    setProducts(fresh)
+    setBulkScoring(false)
+    setBulkProgress(null)
   }
 
   const handleGenerateCreatives = async (productId: string) => {
@@ -231,13 +273,13 @@ export default function ProductsPage() {
         </div>
 
         {error && (
-          <div className="bg-red-900/30 border border-red-700 text-red-300 rounded-xl p-3 text-sm">
+          <div className="rounded-xl p-3 text-sm" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }}>
             {error}
           </div>
         )}
         {success && (
-          <div className="bg-green-900/30 border border-green-700 text-green-300 rounded-xl p-3 text-sm">
-            ✅ Produto adicionado! Clique em &quot;Analisar&quot; para gerar o score.
+          <div className="rounded-xl p-3 text-sm" style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#4ade80' }}>
+            Produto adicionado! Clique em &quot;Analisar&quot; para gerar o score.
           </div>
         )}
 
@@ -352,13 +394,14 @@ export default function ProductsPage() {
                   onChange={set('url')}
                 />
                 <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-300">Descrição</label>
+                  <label className="block text-sm font-medium" style={{ color: 'rgba(255,255,255,0.6)' }}>Descrição</label>
                   <textarea
                     value={form.description}
                     onChange={e => set('description')(e.target.value)}
                     placeholder="Informações adicionais sobre o produto..."
                     rows={3}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/30 transition-colors resize-none"
+                    className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none resize-none transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
                   />
                 </div>
               </div>
@@ -367,12 +410,13 @@ export default function ProductsPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl transition-colors text-sm"
+              className="w-full disabled:opacity-50 text-white font-semibold py-3.5 rounded-xl transition-all active:scale-[0.98] text-sm"
+              style={{ background: 'var(--brand)' }}
             >
               {submitting ? 'Adicionando...' : '+ Adicionar produto'}
             </button>
 
-            <p className="text-center text-xs text-gray-600">
+            <p className="text-center text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
               Ou use a extensão Chrome — adiciona direto da página do Shopee
             </p>
           </form>
@@ -380,14 +424,14 @@ export default function ProductsPage() {
 
         {/* Product List */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.4)' }}>
               Produtos ({visibleProducts.length})
             </h2>
             {testCount > 0 && (
               <button
                 onClick={() => setHideTest(v => !v)}
-                className="text-xs px-3 py-1 rounded-lg font-medium transition-all"
+                className="text-xs px-3 py-1 rounded-lg font-medium transition-all flex-shrink-0"
                 style={hideTest ? {
                   background: 'rgba(234,179,8,0.12)',
                   color: '#fbbf24',
@@ -401,6 +445,59 @@ export default function ProductsPage() {
               </button>
             )}
           </div>
+
+          {/* Type filter — only show when there are owned products */}
+          {ownedCount > 0 && (
+            <div className="flex gap-1.5 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 pb-1">
+              {([
+                { key: 'all', label: 'Todos', count: withoutTests.length },
+                { key: 'affiliate', label: 'Afiliado', count: affiliateCount },
+                { key: 'owned', label: 'Próprio', count: ownedCount },
+              ] as { key: TypeFilter; label: string; count: number }[]).map(t => (
+                <button key={t.key} onClick={() => setTypeFilter(t.key)}
+                  className="flex-shrink-0 text-xs px-3 py-2 rounded-xl font-medium transition-all active:scale-95"
+                  style={typeFilter === t.key ? {
+                    background: 'rgba(255,107,53,0.15)',
+                    color: 'var(--brand)',
+                    border: '1px solid rgba(255,107,53,0.3)',
+                  } : {
+                    background: 'var(--surface)',
+                    color: 'rgba(255,255,255,0.45)',
+                    border: '1px solid var(--border)',
+                  }}>
+                  {t.label} <span className="ml-1 opacity-60">{t.count}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Bulk score button */}
+          {!loading && (() => {
+            const unscoredCount = visibleProducts.filter(p => !p.product_scores?.length).length
+            if (unscoredCount < 2) return null
+            return (
+              <div>
+                {bulkProgress && (
+                  <div className="mb-2">
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                      <div className="h-full rounded-full transition-all"
+                        style={{ width: `${(bulkProgress.done / bulkProgress.total) * 100}%`, background: 'var(--brand)' }} />
+                    </div>
+                    <p className="text-xs mt-1 text-center" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                      Analisando {bulkProgress.done}/{bulkProgress.total}...
+                    </p>
+                  </div>
+                )}
+                <button
+                  onClick={() => { void handleBulkScore() }}
+                  disabled={bulkScoring}
+                  className="w-full py-3 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-50"
+                  style={{ background: 'rgba(255,107,53,0.1)', color: 'var(--brand)', border: '1px solid rgba(255,107,53,0.3)' }}>
+                  {bulkScoring ? `Analisando...` : `Analisar todos sem score (${unscoredCount})`}
+                </button>
+              </div>
+            )
+          })()}
 
           {loading && (
             <div className="space-y-3">
@@ -454,11 +551,17 @@ export default function ProductsPage() {
                           </span>
                         )}
                       </div>
-                      {score && (
-                        <div className={`flex-shrink-0 text-xs px-2 py-1 rounded-lg border font-bold ${REC_COLOR[score.recommendation] ?? 'bg-gray-700 text-gray-300'}`}>
-                          {score.overall_score}
-                        </div>
-                      )}
+                      {score && (() => {
+                        const rc = REC_CFG[score.recommendation]
+                        return (
+                          <div className="flex-shrink-0 text-xs px-2 py-1 rounded-lg font-bold"
+                            style={rc
+                              ? { background: rc.bg, color: rc.color, border: `1px solid ${rc.border}` }
+                              : { background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                            {score.overall_score}
+                          </div>
+                        )
+                      })()}
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
                       {product.price && <span>R$ {Number(product.price).toFixed(2)}</span>}
@@ -470,11 +573,17 @@ export default function ProductsPage() {
                       {product.rating && <span>{product.rating} nota</span>}
                       {product.sold_count > 0 && <span>{product.sold_count.toLocaleString('pt-BR')} vendidos</span>}
                     </div>
-                    {score && (
-                      <div className={`mt-2 text-xs px-2 py-0.5 rounded-md inline-block border ${REC_COLOR[score.recommendation] ?? ''}`}>
-                        {score.recommendation}
-                      </div>
-                    )}
+                    {score && (() => {
+                      const rc = REC_CFG[score.recommendation]
+                      return (
+                        <div className="mt-2 text-xs px-2 py-0.5 rounded-md inline-block"
+                          style={rc
+                            ? { background: rc.bg, color: rc.color, border: `1px solid ${rc.border}` }
+                            : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' }}>
+                          {score.recommendation}
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
 
@@ -486,7 +595,7 @@ export default function ProductsPage() {
                     className="flex-1 min-w-0 text-sm disabled:opacity-50 text-white px-3 py-2.5 rounded-xl transition-colors font-medium"
                     style={{ background: '#3b82f6' }}
                   >
-                    {isScoring ? 'Analisando...' : 'Analisar'}
+                    {isScoring ? 'Analisando...' : score ? 'Re-analisar' : 'Analisar'}
                   </button>
                   {score && (
                     <>
@@ -498,9 +607,19 @@ export default function ProductsPage() {
                       >
                         {isGenerating ? 'Gerando...' : 'Criativos'}
                       </button>
+                      {score.overall_score >= 50 && (
+                        <a
+                          href={`/launch?productId=${product.id}`}
+                          className="flex-shrink-0 text-sm px-3 py-2.5 rounded-xl font-bold transition-all active:scale-95"
+                          style={{ background: 'var(--brand)', color: '#fff' }}
+                          title="Lançar no wizard"
+                        >
+                          Lançar
+                        </a>
+                      )}
                       <button
                         onClick={() => setExpanded(isExpanded ? null : product.id)}
-                        className="text-sm px-3 py-2.5 rounded-xl transition-colors"
+                        className="text-sm px-3 py-2.5 rounded-xl transition-colors flex-shrink-0"
                         style={{ background: 'var(--surface-2)', color: 'rgba(255,255,255,0.5)' }}
                         aria-label="Ver score detalhado"
                       >
@@ -513,7 +632,7 @@ export default function ProductsPage() {
                       href={product.affiliate_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm px-3 py-2.5 rounded-xl transition-colors"
+                      className="flex-shrink-0 text-sm px-3 py-2.5 rounded-xl transition-colors"
                       style={{ background: 'var(--surface-2)', color: 'rgba(255,255,255,0.5)' }}
                       aria-label="Abrir link de afiliado"
                     >

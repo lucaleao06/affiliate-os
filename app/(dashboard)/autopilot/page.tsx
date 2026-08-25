@@ -125,6 +125,8 @@ export default function AutopilotPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [running, setRunning] = useState(false)
+  const [runResult, setRunResult] = useState<{ evaluated: number; decisions: Array<{ candidateId: string; decision: string; reason: string }>; message?: string } | null>(null)
 
   const loadRules = useCallback((): Promise<AutopilotRules> =>
     fetch('/api/autopilot/rules')
@@ -177,6 +179,17 @@ export default function AutopilotPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleRun = async () => {
+    setRunning(true)
+    setRunResult(null)
+    try {
+      const res = await fetch('/api/autopilot/run', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })
+      const d = await res.json() as { evaluated: number; decisions: Array<{ candidateId: string; decision: string; reason: string }>; message?: string }
+      setRunResult(d)
+    } catch (e) { setError(String(e)) }
+    finally { setRunning(false) }
   }
 
   const toggleChannel = (ch: string) => {
@@ -382,6 +395,23 @@ export default function AutopilotPage() {
             </div>
           )}
 
+          {/* Cron schedule info */}
+          <div className="rounded-xl px-4 py-3 flex items-center gap-3"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}>
+            <span className="text-xs font-mono px-2 py-0.5 rounded flex-shrink-0"
+              style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.5)' }}>
+              cron
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.55)' }}>
+                Avaliação automática a cada hora via <span style={{ color: 'rgba(255,255,255,0.8)' }}>/api/cron/autopilot</span>
+              </p>
+              <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                Requer <code>CRON_SECRET</code> nas variáveis de ambiente do Vercel
+              </p>
+            </div>
+          </div>
+
           {/* Save */}
           <button onClick={handleSave} disabled={saving || saved}
             className="w-full py-4 rounded-2xl font-bold text-base transition-all active:scale-95 disabled:opacity-70"
@@ -396,6 +426,34 @@ export default function AutopilotPage() {
           <p className="text-center text-xs pb-2" style={{ color: 'rgba(255,255,255,0.2)' }}>
             Configurações salvas no banco · SUPERVISED padrão recomendado
           </p>
+
+          {/* Manual run */}
+          <button onClick={() => { void handleRun() }} disabled={running}
+            className="w-full py-3 rounded-2xl font-semibold text-sm transition-all active:scale-95 disabled:opacity-50"
+            style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', border: '1px solid var(--border)' }}>
+            {running ? 'Executando avaliação...' : 'Testar agora'}
+          </button>
+
+          {runResult && (
+            <div className="rounded-xl p-3 space-y-2"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)' }}>
+              <p className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                {runResult.message ?? `${runResult.evaluated} candidato(s) avaliado(s)`}
+              </p>
+              {runResult.decisions.map((d, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5 flex-shrink-0"
+                    style={{
+                      background: d.decision === 'advance' ? 'rgba(34,197,94,0.15)' : d.decision === 'block' ? 'rgba(248,113,113,0.15)' : 'rgba(251,191,36,0.15)',
+                      color: d.decision === 'advance' ? '#4ade80' : d.decision === 'block' ? '#f87171' : '#fbbf24',
+                    }}>
+                    {d.decision.toUpperCase()}
+                  </span>
+                  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>{d.reason}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </>
       )}
     </div>

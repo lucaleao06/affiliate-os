@@ -59,19 +59,19 @@ function ConnectPageInner() {
       {success === 'instagram' && (
         <div className="rounded-xl p-4 text-sm font-medium"
           style={{ background: 'rgba(34,197,94,0.12)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }}>
-          ✅ Instagram conectado{igHandle ? ` como @${igHandle}` : ''}!
+          Instagram conectado{igHandle ? ` como @${igHandle}` : ''}
         </div>
       )}
       {success === 'youtube' && (
         <div className="rounded-xl p-4 text-sm font-medium"
           style={{ background: 'rgba(34,197,94,0.12)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.2)' }}>
-          ✅ YouTube conectado{ytChannel ? ` — ${ytChannel}` : ''}!
+          YouTube conectado{ytChannel ? ` — ${ytChannel}` : ''}
         </div>
       )}
       {error && error === 'no_ig_business' && (
         <div className="rounded-xl p-4 text-sm space-y-3"
           style={{ background: 'rgba(234,179,8,0.08)', color: '#eab308', border: '1px solid rgba(234,179,8,0.2)' }}>
-          <p className="font-bold">⚠️ Conta Instagram Business não encontrada</p>
+          <p className="font-bold">Conta Instagram Business não encontrada</p>
           <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
             O OAuth funcionou, mas nenhuma Página do Facebook conectada tem uma conta Instagram Business/Creator vinculada. Siga os passos:
           </p>
@@ -86,7 +86,7 @@ function ConnectPageInner() {
       {error && error !== 'no_ig_business' && (
         <div className="rounded-xl p-4 text-sm"
           style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
-          ❌ Erro: {decodeURIComponent(error).replace(/_/g, ' ')}
+          Erro: {decodeURIComponent(error).replace(/_/g, ' ')}
         </div>
       )}
 
@@ -112,10 +112,10 @@ function ConnectPageInner() {
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-xl border"
-                  style={{ background: 'rgba(255,107,53,0.16)', borderColor: 'rgba(255,107,53,0.28)' }}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold border"
+                  style={{ background: 'rgba(255,107,53,0.16)', borderColor: 'rgba(255,107,53,0.28)', color: 'var(--brand)' }}
                 >
-                  📸
+                  IG
                 </div>
                 <div>
                   <p className="font-bold text-sm" style={{ color: 'rgba(255,255,255,0.9)' }}>
@@ -132,18 +132,17 @@ function ConnectPageInner() {
             {ig?.connected ? (
               <div className="mt-4 space-y-2">
                 <div className="flex items-center gap-2 text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                  <span>👤</span>
                   <span>@{ig.username} · ID {ig.userId?.slice(0, 8)}…</span>
                 </div>
                 {ig.expiresAt && (
                   <div className="text-xs" style={{ color: ig.expired ? '#ef4444' : 'rgba(255,255,255,0.3)' }}>
-                    {ig.expired ? '⚠️ Token expirado — reconecte' : `Expira em ${relDate(ig.expiresAt)}`}
+                    {ig.expired ? 'Token expirado — reconecte' : `Expira em ${relDate(ig.expiresAt)}`}
                   </div>
                 )}
                 <a href="/api/connect/meta"
                   className="block text-center text-xs py-2 rounded-lg mt-3 transition-all active:scale-95"
                   style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}>
-                  🔄 Reconectar
+                  Reconectar
                 </a>
               </div>
             ) : (
@@ -164,9 +163,9 @@ function ConnectPageInner() {
           <div className="rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-                  style={{ background: '#ff0000' }}>
-                  ▶️
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold"
+                  style={{ background: '#ff0000', color: '#fff' }}>
+                  YT
                 </div>
                 <div>
                   <p className="font-bold text-sm" style={{ color: 'rgba(255,255,255,0.9)' }}>
@@ -183,18 +182,17 @@ function ConnectPageInner() {
             {yt?.connected ? (
               <div className="mt-4 space-y-2">
                 <div className="flex items-center gap-2 text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                  <span>📺</span>
                   <span>{yt.channelTitle}</span>
                 </div>
                 {yt.expiresAt && (
                   <div className="text-xs" style={{ color: yt.expired ? '#ef4444' : 'rgba(255,255,255,0.3)' }}>
-                    {yt.expired ? '⚠️ Token expirado — reconecte' : `Token expira em ${relDate(yt.expiresAt)} (renovado automaticamente)`}
+                    {yt.expired ? 'Token expirado — reconecte' : `Token expira em ${relDate(yt.expiresAt)} (renovado automaticamente)`}
                   </div>
                 )}
                 <a href="/api/connect/youtube"
                   className="block text-center text-xs py-2 rounded-lg mt-3 transition-all active:scale-95"
                   style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}>
-                  🔄 Reconectar
+                  Reconectar
                 </a>
               </div>
             ) : (
@@ -214,9 +212,9 @@ function ConnectPageInner() {
           {/* TikTok — lower priority */}
           <div className="rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)', opacity: 0.6 }}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-                style={{ background: '#000' }}>
-                🎵
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold"
+                style={{ background: '#000', color: '#fff' }}>
+                TK
               </div>
               <div className="flex-1">
                 <p className="font-bold text-sm" style={{ color: 'rgba(255,255,255,0.9)' }}>
@@ -236,9 +234,9 @@ function ConnectPageInner() {
           {/* Shopee */}
           <div className="rounded-2xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-                style={{ background: '#f63' }}>
-                🛍️
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold"
+                style={{ background: '#f63', color: '#fff' }}>
+                SH
               </div>
               <div>
                 <p className="font-bold text-sm" style={{ color: 'rgba(255,255,255,0.9)' }}>
@@ -250,7 +248,7 @@ function ConnectPageInner() {
               </div>
               <span className="ml-auto text-[11px] px-2 py-1 rounded-full font-semibold"
                 style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>
-                MANUAL ✓
+                MANUAL
               </span>
             </div>
           </div>
@@ -258,7 +256,7 @@ function ConnectPageInner() {
           {/* Setup instructions */}
           <div className="rounded-xl p-4 text-xs space-y-1.5"
             style={{ background: 'rgba(255,107,53,0.08)', border: '1px solid rgba(255,107,53,0.15)', color: 'rgba(255,255,255,0.4)' }}>
-            <p className="font-semibold" style={{ color: 'rgba(255,107,53,0.7)' }}>⚠️ Para conectar Instagram/YouTube</p>
+            <p className="font-semibold" style={{ color: 'rgba(255,107,53,0.7)' }}>Para conectar Instagram/YouTube</p>
             <p>1. Configure META_APP_ID + META_APP_SECRET no .env.local</p>
             <p>2. Configure GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET no .env.local</p>
             <p>3. Gere ENCRYPTION_KEY: <code>node -e &quot;console.log(require(&apos;crypto&apos;).randomBytes(32).toString(&apos;hex&apos;))&quot;</code></p>

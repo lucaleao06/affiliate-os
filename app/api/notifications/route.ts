@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url)
   const unreadOnly = url.searchParams.get('unread') === '1'
 
-  const query = admin.from('notifications').select('*').order('created_at', { ascending: false }).limit(50)
-  if (unreadOnly) query.eq('read', false)
+  let query = admin.from('notifications').select('*').order('created_at', { ascending: false }).limit(50)
+  if (unreadOnly) query = query.eq('read', false)
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

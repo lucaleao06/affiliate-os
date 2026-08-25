@@ -12,16 +12,17 @@ interface Notification {
   created_at: string
 }
 
-const EVENT_ICONS: Record<string, string> = {
-  creative_ready: '✨',
-  approval_required: '⏳',
-  render_completed: '🎬',
-  render_failed: '❌',
-  publication_ready: '📦',
-  publication_failed: '❌',
-  winner_detected: '🏆',
-  import_completed: '📊',
-  import_failed: '❌',
+/** Short text indicator instead of emoji */
+const EVENT_TAG: Record<string, { label: string; color: string; bg: string }> = {
+  creative_ready:      { label: 'Criativo', color: 'var(--brand)',  bg: 'rgba(255,107,53,0.12)' },
+  approval_required:   { label: 'Aprovação', color: '#fbbf24',     bg: 'rgba(251,191,36,0.1)' },
+  render_completed:    { label: 'Render OK', color: '#4ade80',      bg: 'rgba(74,222,128,0.08)' },
+  render_failed:       { label: 'Render !',  color: '#f87171',      bg: 'rgba(248,113,113,0.1)' },
+  publication_ready:   { label: 'Pacote',    color: '#60a5fa',      bg: 'rgba(96,165,250,0.08)' },
+  publication_failed:  { label: 'Pub. !',   color: '#f87171',      bg: 'rgba(248,113,113,0.1)' },
+  winner_detected:     { label: 'Winner',    color: '#fbbf24',      bg: 'rgba(251,191,36,0.1)' },
+  import_completed:    { label: 'Import OK', color: '#4ade80',      bg: 'rgba(74,222,128,0.08)' },
+  import_failed:       { label: 'Import !',  color: '#f87171',      bg: 'rgba(248,113,113,0.1)' },
 }
 
 function timeAgo(iso: string): string {
@@ -66,81 +67,118 @@ export default function NotificationsPage() {
   const unreadCount = items.filter(n => !n.read).length
 
   return (
-    <div className="min-h-screen text-white" style={{ background: 'var(--bg)' }}>
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold">Notificações</h1>
-            {unreadCount > 0 && (
-              <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-semibold">
-                {unreadCount}
-              </span>
-            )}
-          </div>
+    <div className="p-4 md:p-6 space-y-4 max-w-2xl">
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <h1 className="text-2xl font-black text-white">Notificações</h1>
           {unreadCount > 0 && (
-            <button onClick={markAllRead} className="text-xs text-blue-400 hover:text-blue-300">
-              Marcar todas como lidas
-            </button>
+            <span className="text-xs px-2 py-0.5 rounded-full font-bold"
+              style={{ background: 'rgba(255,107,53,0.2)', color: 'var(--brand)' }}>
+              {unreadCount}
+            </span>
           )}
         </div>
+        {unreadCount > 0 && (
+          <button onClick={markAllRead}
+            className="text-xs px-3 py-1.5 rounded-xl transition-all active:scale-95"
+            style={{ background: 'var(--surface)', color: 'rgba(255,255,255,0.45)', border: '1px solid var(--border)' }}>
+            Marcar todas lidas
+          </button>
+        )}
+      </div>
 
-        {loading ? (
-          <div className="space-y-2">
-            {[0,1,2,3].map(i => (
-              <div key={i} className="rounded-xl p-4 animate-pulse" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-                <div className="flex gap-3">
-                  <div className="w-6 h-6 rounded bg-gray-800 flex-shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-3 w-1/2 rounded bg-gray-800" />
-                    <div className="h-3 w-3/4 rounded bg-gray-700" />
-                  </div>
+      {/* Loading */}
+      {loading && (
+        <div className="space-y-2">
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} className="rounded-2xl p-4 animate-pulse"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <div className="flex gap-3 items-center">
+                <div className="w-12 h-5 rounded-full flex-shrink-0"
+                  style={{ background: 'rgba(255,255,255,0.06)' }} />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-1/2 rounded" style={{ background: 'rgba(255,255,255,0.06)' }} />
+                  <div className="h-3 w-3/4 rounded" style={{ background: 'rgba(255,255,255,0.04)' }} />
                 </div>
               </div>
-            ))}
-          </div>
-        ) : items.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="text-4xl mb-3">🔔</div>
-            <p className="text-gray-400 text-sm">Nenhuma notificação ainda.</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {items.map(n => (
-              <div
-                key={n.id}
-                className="rounded-xl p-4 transition cursor-pointer"
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty */}
+      {!loading && items.length === 0 && (
+        <div className="rounded-2xl p-10 text-center space-y-3"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+          <div className="w-10 h-10 rounded-xl mx-auto flex items-center justify-center text-xs"
+            style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.25)' }}>–</div>
+          <p className="text-sm font-semibold text-white">Nenhuma notificação ainda</p>
+          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            Avisos de render, aprovação e winners aparecem aqui.
+          </p>
+        </div>
+      )}
+
+      {/* List */}
+      {!loading && items.length > 0 && (
+        <div className="space-y-2">
+          {items.map(n => {
+            const tag = EVENT_TAG[n.event]
+            return (
+              <div key={n.id}
+                className="rounded-2xl p-4 transition-all cursor-pointer active:scale-[0.99]"
                 style={{
-                  background: n.read ? 'rgba(17,17,39,0.5)' : 'var(--surface)',
-                  border: `1px solid ${n.read ? 'var(--border)' : 'rgba(255,255,255,0.14)'}`,
+                  background: n.read ? 'rgba(17,17,39,0.4)' : 'var(--surface)',
+                  border: `1px solid ${n.read ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.12)'}`,
+                  opacity: n.read ? 0.65 : 1,
                 }}
-                onClick={() => !n.read && markRead(n.id)}
-              >
+                onClick={() => !n.read && void markRead(n.id)}>
+
                 <div className="flex items-start gap-3">
-                  <span className="text-xl flex-shrink-0 mt-0.5">
-                    {EVENT_ICONS[n.event] ?? '🔔'}
-                  </span>
+                  {/* Tag pill instead of emoji */}
+                  {tag ? (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 mt-0.5"
+                      style={{ background: tag.bg, color: tag.color }}>
+                      {tag.label}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 mt-0.5"
+                      style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' }}>
+                      {n.event}
+                    </span>
+                  )}
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <p className={`text-sm font-medium leading-tight ${n.read ? 'text-gray-400' : 'text-white'}`}>
+                      <p className="text-sm font-medium leading-tight"
+                        style={{ color: n.read ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.9)' }}>
                         {n.title}
                       </p>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
-                        {!n.read && <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />}
-                        <span className="text-xs text-gray-600">{timeAgo(n.created_at)}</span>
+                        {!n.read && (
+                          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                            style={{ background: 'var(--brand)' }} />
+                        )}
+                        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                          {timeAgo(n.created_at)}
+                        </span>
                       </div>
                     </div>
                     {n.body && (
-                      <p className={`text-xs mt-1 leading-relaxed ${n.read ? 'text-gray-600' : 'text-gray-400'}`}>
+                      <p className="text-xs mt-1 leading-relaxed"
+                        style={{ color: n.read ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.45)' }}>
                         {n.body}
                       </p>
                     )}
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

@@ -7,6 +7,7 @@ interface HojeData {
   date: string
   autopilotMode: string
   autopilotEnabled: boolean
+  approvedCreatives: number
   generated: { count: number; countToday: number; failed: number; items: Array<{ id: string; filename?: string; durationSec?: number; downloadUrl?: string }> }
   awaitingApproval: { count: number; items: Array<{ id: string; hook: string; product?: string }> }
   published: { count: number; countToday: number; items: Array<{ id: string; channel: string; url?: string }> }
@@ -29,6 +30,14 @@ function nextStep(d: HojeData): { label: string; sub: string; href: string; urge
       label: `Revisar ${d.awaitingApproval.count} criativo${d.awaitingApproval.count !== 1 ? 's' : ''} pendente${d.awaitingApproval.count !== 1 ? 's' : ''}`,
       sub: 'Aprovar para liberar o pipeline de vídeo',
       href: '/queue',
+      urgent: true,
+    }
+  }
+  if (d.approvedCreatives > 0 && d.generated.count === 0) {
+    return {
+      label: 'Gerar vídeo',
+      sub: 'Criativo aprovado aguardando render',
+      href: '/video-factory',
       urgent: true,
     }
   }
@@ -182,12 +191,16 @@ export default function HojePage() {
       </div>
 
       {/* Vendas */}
-      <div className="rounded-2xl p-4" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-        <p className="text-[10px] font-semibold uppercase tracking-widest mb-2.5"
-          style={{ color: 'rgba(255,255,255,0.25)' }}>Vendas hoje</p>
+      <Link href={data.sales.count === 0 ? '/sales/import' : '/sales'}
+        className="rounded-2xl p-4 block" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <div className="flex items-center justify-between mb-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-widest"
+            style={{ color: 'rgba(255,255,255,0.25)' }}>Vendas hoje</p>
+          <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.2)' }}>→</span>
+        </div>
         {data.sales.count === 0 ? (
           <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            Sem vendas registradas — importe o CSV da Shopee para ver comissões.
+            Sem vendas registradas — toque para importar CSV da Shopee.
           </p>
         ) : (
           <div className="flex items-center gap-4">
@@ -202,7 +215,7 @@ export default function HojePage() {
             </div>
           </div>
         )}
-      </div>
+      </Link>
 
       {/* Winners */}
       {data.winners.count > 0 && (

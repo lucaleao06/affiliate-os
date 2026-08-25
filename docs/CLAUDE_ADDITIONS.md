@@ -5,6 +5,71 @@ Cada entrada tem: data · arquivo · motivo._
 
 ---
 
+## 2026-08-23 — MODO CONTÍNUO #6: Dashboard com dados de receita
+
+### `app/api/dashboard/route.ts` (MODIFICADO)
+- Adicionado `commissionToday` e `salesCountToday` via query em `sales` filtrada por hoje
+- Retornados no JSON junto com os campos existentes
+
+### `app/(dashboard)/dashboard/page.tsx` (MODIFICADO)
+- Interface `Stats` atualizada com `commissionToday` e `salesCountToday`
+- Grid de 4 → 6 cards: primeiro dois são "Comissão hoje" (→/revenue) e "Vendas hoje" (→/sales)
+- Cards destacados em laranja quando valor > 0
+- Motivo: dashboard principal não mostrava nenhum dado financeiro — usuário precisava ir em /hoje ou /revenue para ver receita
+
+---
+
+## 2026-08-23 — MODO CONTÍNUO #5: Autopilot "Testar agora"
+
+### `app/(dashboard)/autopilot/page.tsx` (MODIFICADO)
+- Adicionado botão "Testar agora" que chama `POST /api/autopilot/run`
+- Exibe resultado inline: mensagem + lista de decisões (ADVANCE/BLOCK/QUEUE) com motivo
+- Estado `running` desabilita o botão durante execução
+- Motivo: usuários não tinham forma de testar o autopilot manualmente; precisavam esperar o cron horário
+
+---
+
+## 2026-08-23 — MODO CONTÍNUO #4: Queue → Video Factory pipeline shortcut
+
+### `app/(dashboard)/queue/page.tsx` (MODIFICADO)
+- "Gerar vídeo →" agora passa `?creativeId=${c.id}` para `/video-factory`
+- Motivo: antes o usuário chegava no video-factory sem saber qual criativo selecionar
+
+### `app/(dashboard)/video-factory/page.tsx` (MODIFICADO)
+- Adicionado `useSearchParams` + `Suspense` wrapper + `force-dynamic`
+- Ao receber `?creativeId=`, ordena o criativo correspondente no topo da lista
+- Borda laranja (`rgba(255,107,53,0.6)`) no card do criativo destacado
+- TSC: 0 erros ✅
+
+---
+
+## 2026-08-23 — MODO CONTÍNUO #3: UX polish + pipeline shortcuts
+
+### `app/(dashboard)/layout.tsx` (MODIFICADO)
+Badge de notificações zera imediatamente quando `pathname === '/notifications'`. Antes, o badge só zerava depois que o usuário clicava "Marcar todas lidas" E navegava para outra página.
+**Motivo:** UX — visitar a página de notificações implica que o usuário viu os itens.
+
+### `app/(dashboard)/sales/import/page.tsx` (MODIFICADO)
+Adicionado `useEffect` que busca `GET /api/sales/import` ao montar a página. Seção "Importações anteriores" exibe batches históricos com status (OK/ERRO/PROC), nome do arquivo, linhas importadas e data.
+**Motivo:** Usuário não tinha visibilidade de CSVs já importados — risco de duplicata.
+
+### `app/(dashboard)/autopilot/page.tsx` (MODIFICADO)
+Card informativo do cron adicionado acima do botão "Salvar": mostra que `/api/cron/autopilot` roda a cada hora e que `CRON_SECRET` precisa estar configurado no Vercel.
+**Motivo:** Cron foi criado na sessão anterior mas a UI não mencionava — usuário não saberia que o autopilot tem execução automática.
+
+### `app/(dashboard)/launch/page.tsx` (MODIFICADO)
+- Adicionado `useSearchParams` para ler `?productId=` da URL
+- `useEffect` auto-seleciona o produto e avança para o step `score` quando o param está presente
+- Adicionado `export const dynamic = 'force-dynamic'` para Next.js não tentar SSG
+- Componente renomeado para `LaunchPageInner`, exportado como `LaunchPage` envolvido em `<Suspense>`
+**Motivo:** Botão "Lançar" na `/products` abria o wizard sem pré-selecionar o produto — usuário tinha que escolher o produto de novo manualmente.
+
+### `app/(dashboard)/products/page.tsx` (MODIFICADO)
+Botão "Lançar" alterado de `href="/launch"` para `href={"/launch?productId="+product.id}`.
+**Motivo:** Integração com auto-select do wizard acima.
+
+---
+
 ## 2026-08-22 — Sprint 11: UX comercial — filtros MOCK, honestidade IA, SUPERVISED
 
 ### `app/api/hoje/route.ts` (MODIFICADO)
@@ -583,3 +648,135 @@ Primeiro loop real completo executado: produto Shopee real → score 74/100 → 
 - Botão ao lado de "Produtos (N)": "⚠️ N teste(s) oculto(s)" ↔ "Ocultar testes".
 - Empty state diferenciado: quando `products.length > 0 && hideTest` mostra "Apenas testes cadastrados" com instrução para revelá-los.
 **Motivo:** Produtos de teste não devem contaminar a view operacional real.
+
+---
+
+## 2026-08-23 — MODO CONTÍNUO: Design Refactor Global (zero emoji, zero gray, zero gradient)
+
+### Varredura + regras estabelecidas
+Scan completo de `app/(dashboard)/` e `components/` confirmou: zero `bg-gray-*`, zero `text-gray-*`, zero `linear-gradient`, zero emoji em labels/títulos/botões após este sprint.
+
+### `app/(dashboard)/connect/page.tsx`
+Ícones de plataforma: emoji → badges de 2 letras (`IG`, `YT`, `TK`, `SH`) com `background: rgba(255,107,53,0.16)`. Toast: `✅`/`❌` removidos. Warning: `⚠️` removido. Botão: "Reconectar" (sem emoji).
+
+### `app/(dashboard)/launch/page.tsx`
+H1: "Lançar Campanha" (sem `🚀`). Spinner `⚙️` → CSS spinner `animate-spin border`. Seções: "Produto", "Score do produto", "Criativo", "Storyboard", "Renderizar MP4", "Distribuir" (sem emoji). Botões: "Analisar agora →", "Gerar 3 criativos →", "Gerar storyboard →", "Renderizar →", "Publicar". Metadata render: `{s}s · {MB} MB · 9:16`. Canais: `IG`/`YT`/`SH` como tag pills.
+
+### `app/(dashboard)/revenue/page.tsx`
+Empty state: `📊` → badge `CSV` em `rgba(255,255,255,0.05)`. `text-gray-400/600/700` → `style={{ color: 'rgba(255,255,255,...)' }}`. Fix: corrupt replace_all que gerou `className` duplicado (`text-xs text-xs` etc.) corrigido manualmente.
+
+### `app/(dashboard)/mais/page.tsx`
+`icon` de cada link: emoji → siglas 2 letras (`HJ`,`LC`,`CN`,`PR`,`PP`,`R$`,`GW`,`NT`,`CV`,`AP`) em pill `background: rgba(255,107,53,0.12)`.
+
+### `app/(dashboard)/products/page.tsx`
+Success message: removido `✅`. Textarea: `bg-gray-800 border-gray-700 placeholder-gray-600` → CSS vars. Label: `text-gray-300` → `style`. REC_COLOR fallback: `bg-gray-700 text-gray-300` → `bg-white/10 text-white/50 border-white/20`.
+
+### `app/(dashboard)/layout.tsx`
+Footer: removido `✅` de `v0.3 · FFmpeg arm64`. Sidebar: ícones são símbolos Unicode limpos (⌂, □, ▷, ↗, ⋯, ＋, ⌕, ◇, ⟡, R$, •, ↓, ◌) — zero emoji.
+
+### `app/(dashboard)/dashboard/page.tsx`
+Bug fix: `useEffect` tinha fetch duplicado inline em vez de usar `loadDashboard()`. Refatorado: `useEffect(() => { loadDashboard() }, [])`. `r.json()` tipado como `Promise<Stats>` para eliminar unsafe cast.
+
+### `app/(dashboard)/products/add-own/page.tsx`
+Duas instâncias de `placeholder-gray-600` removidas: (1) `<input>` no componente `TextInput`, (2) `<textarea>` de descrição.
+
+### `app/api/revenue/route.ts` (BUG CRÍTICO CORRIGIDO)
+`baseQuery()` usava `const q = ...; q.gte(...)` — Supabase v2 é imutável, `.gte()` retorna novo objeto descartado. Filtro de período NUNCA era aplicado. `topProducts`, `topChannels`, `topCreatives`, `statusBreakdown` sempre mostravam ALL TIME independente de `?period=today|7d|30d`. Fix: `let q = ...; q = q.gte('occurred_at', sinceISO)`.
+
+### `app/api/dashboard/route.ts` (BUG NaN CORRIGIDO)
+`(s.overall_score as number)` quando `overall_score` é null → NaN propaga por `reduce` e `Math.round` → dashboard mostrava "NaN". Fix: `validScores = scores.filter(s => s.overall_score != null)` antes do reduce.
+
+### `app/(dashboard)/products/page.tsx` (FEATURE: filtro owned/affiliate)
+Adicionado `TypeFilter = 'all' | 'affiliate' | 'owned'` com tabs "Todos / Afiliado / Próprio". Tabs só aparecem quando `ownedCount > 0`. Contagens derivadas de `withoutTests`. Era listado como `❌ não implementado` no CLAUDE_STATUS.md.
+
+### `app/layout.tsx` (CORRIGIDO — última violação gray)
+`className="min-h-full bg-gray-950 text-white antialiased"` → `style={{ background: 'var(--bg)' }}`. Última instância de `bg-gray-*` no projeto inteiro.
+
+### `app/(dashboard)/launch/page.tsx` (FEATURE: seletor produto existente + banner sucesso)
+- `useEffect` busca `/api/products` no mount, filtra produtos `[TESTE]/[TEST]`
+- Botão "Usar produto existente (N)" com lista colapsável — toque seleciona e avança direto para score
+- Divisor "ou adicione novo" entre seletor e formulário
+- `alert()` nativo substituído por banner inline verde com link para Distribuição
+- `publishSuccess` state: quando `true`, oculta botões e exibe CTA "Ver em Distribuição →"
+
+### `app/(dashboard)/products/page.tsx` (FEATURE: botão Lançar + label Re-analisar)
+- Botão "Lançar" (var(--brand)) aparece nos cards com `overall_score >= 50` → link `/launch`
+- Botão "Analisar" renomeado para "Re-analisar" quando produto já tem score (contexto mais claro)
+- `flex-shrink-0` adicionado nos botões de expand e link afiliado para não quebrarem em mobile
+
+### `app/(dashboard)/queue/page.tsx` (FEATURE: CTA "Gerar vídeo →" para approved)
+Criativos aprovados não tinham ação após o voto. Adicionado bloco abaixo dos cards `status === 'approved'` com link para `/video-factory` estilizado com `var(--brand)`.
+**Motivo:** approved ficava num estado morto sem CTA. Usuário não sabia o próximo passo.
+
+### TSC confirmado: 0 errors após todas as mudanças.
+
+---
+
+## 2026-08-23 — Bug fix: `api/publish` status filter + distribute copied per-package
+
+### `app/(dashboard)/sales/import/page.tsx` (CORRIGIDO — violações Tailwind)
+4 instâncias de classes Tailwind hardcoded substituídas por CSS vars/inline styles:
+- `text-emerald-400` (×3, em comissão total, comissão por linha, contagem importados) → `style={{ color: '#34d399' }}`
+- `bg-yellow-900/20 border border-yellow-800` + `text-yellow-400` (bloco de warnings) → `background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.25)` + `color: '#fbbf24'`
+**Motivo:** única página que passara pelo sprint 5 com violações residuais não detectadas.
+
+### `app/api/notifications/route.ts` (BUG CORRIGIDO)
+`GET /api/notifications?unread=1` nunca filtrava — mesmo padrão Supabase v2 imutável. `?unread=1` retornava TODAS as notificações. Fix: `let query = ...; query = query.eq('read', false)`.
+**Motivo:** quarto caso da imutabilidade Supabase v2 encontrado nesta sessão.
+
+### `app/api/publish/route.ts` (BUG CRÍTICO CORRIGIDO)
+`GET /api/publish?status=ready` nunca filtrava — `const query = ...; query.eq('status', status)` descartava o resultado (Supabase v2 imutável). Pills de filtro em `/distribute` ("Prontos", "Publicados", etc.) sempre retornavam TODOS os pacotes.
+Fix: `let query = ...; query = query.eq('status', status)`.
+**Motivo:** terceiro caso da imutabilidade Supabase v2. Idêntico ao bug de `api/revenue` (período) e `api/publish` GET.
+
+## 2026-08-23 — Nova feature: /sales + api/sales + cron autopilot + vercel.json
+
+### `app/(dashboard)/sales/page.tsx` (CRIADO)
+Lista de transações individuais importadas da tabela `sales`. Filtros de período (7d/30d/90d/Tudo) e status (Todos/Pago/Pendente/Cancelado). Paginação com "Carregar mais". Skeleton, empty state com CTA importar, barra de resumo (total exibidas + comissão). Lê `product_name` de `raw_data` JSONB.
+**Motivo:** usuários podiam importar CSV e ver agregados em /revenue, mas não conseguiam auditar transações individuais.
+
+### `app/api/sales/route.ts` (CRIADO)
+`GET /api/sales` com filtros `?period=` (7d/30d/90d/all) e `?status=` (Supabase v2 corretamente reatribuídos). Paginação `?limit=` + `?offset=`. Retorna `product_name` do campo JSONB `raw_data`.
+**Motivo:** endpoint necessário para a nova página /sales.
+
+### `app/(dashboard)/layout.tsx` (ATUALIZADO)
+Adicionado `/sales` (Vendas, ícone '$') na sidebar no grupo 'analytics', antes de Growth.
+**Motivo:** acessibilidade via nav lateral desktop.
+
+### `app/(dashboard)/mais/page.tsx` (ATUALIZADO)
+Adicionado `/sales` (icon 'VD') no menu mobile.
+**Motivo:** acessibilidade mobile.
+
+### `app/(dashboard)/sales/import/page.tsx` (ATUALIZADO)
+Botão pós-importação "Ver receita" → "Ver vendas" com href `/sales`.
+**Motivo:** guia o usuário à nova página de lista de transações em vez do agregado.
+
+### `app/(dashboard)/revenue/page.tsx` (ATUALIZADO)
+Footer adiciona link "ver transações" → `/sales` ao lado de "importar relatório".
+**Motivo:** drill-down do agregado para as transações individuais.
+
+### `app/api/cron/autopilot/route.ts` (CRIADO)
+Cron handler `GET /api/cron/autopilot` — valida `Authorization: Bearer <CRON_SECRET>`, roda a mesma lógica de `api/autopilot/run/route.ts` (sem HTTP round-trip). Registra decisões (advance/queue_for_approval/block) como notificações com `cron: true`.
+**Motivo:** autopilot existia na UI mas nunca rodava automaticamente — dependia de trigger manual.
+
+### `vercel.json` (CRIADO)
+`{ "crons": [{ "path": "/api/cron/autopilot", "schedule": "0 * * * *" }] }` — roda a cada hora.
+**Motivo:** configura Vercel Cron para disparar o autopilot automaticamente. Requer `CRON_SECRET` em Vercel env vars.
+
+### `app/api/hoje/route.ts` (BUG CORRIGIDO — coluna errada)
+`.gte('order_date', todayIso)` → `.gte('occurred_at', todayIso)`. A tabela `sales` usa `occurred_at` como coluna de data — `order_date` não existe, então a query retornava sempre 0 pedidos. Widget "Vendas hoje" no dashboard /hoje nunca mostrava dados reais.
+**Motivo:** mismatch entre nome de coluna na API e no schema real da tabela.
+
+### `app/(dashboard)/hoje/page.tsx` (UX — card Vendas linkável)
+Card "Vendas hoje" transformado em `<Link>`: vazio → `/sales/import`, com dados → `/sales`. Adicionado indicador "→" no canto. Texto empty state atualizado: "toque para importar CSV".
+**Motivo:** card estava morto (não clicável) — usuário não sabia para onde ir após ver os dados.
+
+---
+
+## 2026-08-23 — Bug fix: `copied` global → por pacote em distribute
+
+### `app/(dashboard)/distribute/page.tsx` (BUG FIX)
+`const [copied, setCopied] = useState(false)` → `const [copiedId, setCopiedId] = useState<string | null>(null)`.
+`copyCaption(pkg)` agora chama `setCopiedId(pkg.id)` / `setCopiedId(null)` em vez do boolean global.
+Botão: `copied ? 'Copiado!'` → `copiedId === pkg.id ? 'Copiado!'`.
+**Motivo:** estado boolean global fazia todos os cards exibirem "Copiado!" quando qualquer legenda era copiada — feedback incorreto e confuso.

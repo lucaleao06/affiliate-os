@@ -6,21 +6,55 @@
  * Steps: 1. Produto → 2. Score → 3. Criativos → 4. Storyboard → 5. Render → 6. Distribuir
  */
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
+
+export const dynamic = 'force-dynamic'
 
 type Step = 'product' | 'score' | 'creative' | 'storyboard' | 'render' | 'distribute'
 
 interface Product { id: string; title: string; price: number; commission_rate: number; affiliate_url: string }
+interface ExistingProduct { id: string; title: string; price: number | null; commission_rate: number | null; marketplace: string | null }
 interface Score { overallScore: number; recommendation: string; reasoning: string }
 interface Creative { id: string; hook: string; caption: string; cta: string; angle: string }
 interface Storyboard { scenes: Array<{ visual: string; text_overlay: string; voiceover: string; duration: string }> }
 interface RenderResult { filename: string; downloadUrl: string; durationSec: number; fileSizeBytes: number }
 
 const STEPS: Step[] = ['product', 'score', 'creative', 'storyboard', 'render', 'distribute']
-export default function LaunchPage() {
+function LaunchPageInner() {
+  const searchParams = useSearchParams()
   const [step, setStep] = useState<Step>('product')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [publishSuccess, setPublishSuccess] = useState(false)
+
+  // Existing products for quick-select
+  const [existingProducts, setExistingProducts] = useState<ExistingProduct[]>([])
+  const [showExisting, setShowExisting] = useState(false)
+  const [radarTopIds, setRadarTopIds] = useState<string[]>([])
+
+  useEffect(() => {
+    fetch('/api/products')
+      .then(r => r.json())
+      .then((d: { products?: ExistingProduct[] }) => {
+        const list = (d.products ?? []).filter(p =>
+          !p.title.startsWith('[TESTE]') && !p.title.startsWith('[TEST]') && p.title !== 'Produto Shopee'
+        )
+        setExistingProducts(list)
+      })
+      .catch(() => null)
+    // Load radar top IDs in parallel
+    fetch('/api/radar')
+      .then(r => r.json() as Promise<{ opportunities: Array<{ id: string; tier: string }> }>)
+      .then(d => {
+        const ids = (d.opportunities ?? [])
+          .filter(o => o.tier === 'now' || o.tier === 'test')
+          .slice(0, 3)
+          .map(o => o.id)
+        setRadarTopIds(ids)
+      })
+      .catch(() => null)
+  }, [])
 
   // Data across steps
   const [productForm, setProductForm] = useState({
@@ -33,6 +67,21 @@ export default function LaunchPage() {
   const [storyboard, setStoryboard] = useState<Storyboard | null>(null)
   const [renderResult, setRenderResult] = useState<RenderResult | null>(null)
   const [channel, setChannel] = useState<string>('instagram')
+  const [autoSelected, setAutoSelected] = useState(false)
+
+  // Auto-select product when ?productId= is in URL (from /products "Lançar" button).
+  // The updates are queued after the effect to keep React's render cycle stable.
+  useEffect(() => {
+    if (autoSelected || existingProducts.length === 0) return
+    const pid = searchParams.get('productId')
+    const match = pid ? existingProducts.find(p => p.id === pid) : null
+    if (!match) return
+    queueMicrotask(() => {
+      setProduct(match as unknown as Product)
+      setStep('score')
+      setAutoSelected(true)
+    })
+  }, [existingProducts, searchParams, autoSelected])
 
   const stepIdx = STEPS.indexOf(step)
   const progressPct = ((stepIdx + 1) / STEPS.length) * 100
@@ -152,7 +201,7 @@ export default function LaunchPage() {
       // Trigger publish
       await api('/api/publish', { action: 'publish', packageId: pkgId, channel })
       setError(null)
-      alert('✅ Publicação enviada! Acompanhe em Distribuição.')
+      setPublishSuccess(true)
     } catch (e) { setError(String(e)) }
     setBusy(false)
   }
@@ -162,7 +211,7 @@ export default function LaunchPage() {
       {/* Header + progress */}
       <div className="pt-2">
         <h1 className="text-2xl font-black" style={{ color: 'rgba(255,255,255,0.95)' }}>
-          🚀 Lançar Campanha
+          Lançar Campanha
         </h1>
         <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
           Produto real → vídeo pronto para publicar, em {STEPS.length} etapas
@@ -198,7 +247,7 @@ export default function LaunchPage() {
       {error && (
         <div className="rounded-xl p-3 text-sm"
           style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
-          ❌ {error}
+          {error}
         </div>
       )}
 
@@ -206,7 +255,83 @@ export default function LaunchPage() {
       {step === 'product' && (
         <div className="rounded-2xl p-5 space-y-4"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <h2 className="font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>📦 Produto real</h2>
+          <h2 className="font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>Produto</h2>
+
+          {/* Radar top picks */}
+          {radarTopIds.length > 0 && (() => {
+            const picks = existingProducts.filter(p => radarTopIds.includes(p.id))
+            if (picks.length === 0) return null
+            return (
+              <div className="space-y-2">
+                <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--brand)' }}>
+                  Radar recomenda
+                </p>
+                {picks.map(p => (
+                  <button key={p.id}
+                    onClick={() => { setProduct(p as unknown as Product); setStep('score') }}
+                    className="w-full text-left px-3 py-3 rounded-xl flex items-center justify-between transition-all active:scale-[0.98]"
+                    style={{ background: 'rgba(255,107,53,0.08)', border: '1px solid rgba(255,107,53,0.22)' }}>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold truncate" style={{ color: 'rgba(255,255,255,0.9)' }}>{p.title}</p>
+                      <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                        {p.commission_rate ? `${p.commission_rate}% comissão` : '—'}
+                        {p.price ? ` · R$ ${Number(p.price).toFixed(2)}` : ''}
+                      </p>
+                    </div>
+                    <span className="text-xs ml-3 font-bold flex-shrink-0" style={{ color: 'var(--brand)' }}>Lançar →</span>
+                  </button>
+                ))}
+                <div className="flex items-center gap-2 pt-1">
+                  <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+                  <span className="text-xs" style={{ color: 'rgba(255,255,255,0.2)' }}>ou escolha outro</span>
+                  <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* Quick-select from existing products */}
+          {existingProducts.length > 0 && (
+            <div>
+              <button
+                onClick={() => setShowExisting(v => !v)}
+                className="w-full text-left text-xs py-2 px-3 rounded-lg flex items-center justify-between transition-all"
+                style={{ background: 'rgba(255,107,53,0.08)', color: 'var(--brand)', border: '1px solid rgba(255,107,53,0.2)' }}>
+                <span>Usar produto existente ({existingProducts.length})</span>
+                <span>{showExisting ? '▲' : '▼'}</span>
+              </button>
+              {showExisting && (
+                <div className="mt-2 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+                  {existingProducts.slice(0, 8).map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        setProduct(p as unknown as Product)
+                        setShowExisting(false)
+                        setStep('score')
+                      }}
+                      className="w-full text-left px-4 py-3 flex items-center justify-between transition-all active:scale-95"
+                      style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
+                      <div className="min-w-0">
+                        <p className="text-sm truncate" style={{ color: 'rgba(255,255,255,0.85)' }}>{p.title}</p>
+                        <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                          {p.price ? `R$ ${Number(p.price).toFixed(2)}` : '—'}
+                          {p.commission_rate ? ` · ${p.commission_rate}% comissão` : ''}
+                          {p.marketplace === 'owned' ? ' · PRÓPRIO' : ''}
+                        </p>
+                      </div>
+                      <span className="text-xs ml-2 flex-shrink-0" style={{ color: 'var(--brand)' }}>Usar →</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="flex items-center gap-2 my-3">
+                <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+                <span className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>ou adicione novo</span>
+                <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+              </div>
+            </div>
+          )}
 
           <div className="space-y-3">
             <div>
@@ -280,7 +405,7 @@ export default function LaunchPage() {
       {step === 'score' && product && (
         <div className="rounded-2xl p-5 space-y-4"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <h2 className="font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>⭐ Score do produto</h2>
+          <h2 className="font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>Score do produto</h2>
           <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
             {product.title} — R$ {product.price} · {Number(product.commission_rate).toFixed(1)}% comissão
           </p>
@@ -291,7 +416,7 @@ export default function LaunchPage() {
               disabled={busy}
               className="w-full py-3 rounded-xl font-bold text-sm transition-all active:scale-95"
               style={{ background: 'var(--brand)', color: '#fff', opacity: busy ? 0.7 : 1 }}>
-              {busy ? 'Analisando com IA...' : '🤖 Analisar agora →'}
+              {busy ? 'Analisando com IA...' : 'Analisar agora →'}
             </button>
           ) : (
             <div className="space-y-3">
@@ -321,7 +446,7 @@ export default function LaunchPage() {
       {step === 'creative' && product && (
         <div className="rounded-2xl p-5 space-y-4"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <h2 className="font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>✍️ Criativo</h2>
+          <h2 className="font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>Criativo</h2>
 
           {creatives.length === 0 ? (
             <button
@@ -329,7 +454,7 @@ export default function LaunchPage() {
               disabled={busy}
               className="w-full py-3 rounded-xl font-bold text-sm transition-all active:scale-95"
               style={{ background: 'var(--brand)', color: '#fff', opacity: busy ? 0.7 : 1 }}>
-              {busy ? 'Gerando com IA...' : '🤖 Gerar 3 criativos →'}
+              {busy ? 'Gerando com IA...' : 'Gerar 3 criativos →'}
             </button>
           ) : (
             <div className="space-y-3">
@@ -366,7 +491,7 @@ export default function LaunchPage() {
       {step === 'storyboard' && selectedCreative && (
         <div className="rounded-2xl p-5 space-y-4"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <h2 className="font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>🎬 Storyboard</h2>
+          <h2 className="font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>Storyboard</h2>
 
           {!storyboard ? (
             <button
@@ -374,7 +499,7 @@ export default function LaunchPage() {
               disabled={busy}
               className="w-full py-3 rounded-xl font-bold text-sm transition-all active:scale-95"
               style={{ background: 'var(--brand)', color: '#fff', opacity: busy ? 0.7 : 1 }}>
-              {busy ? 'Gerando storyboard...' : '🎬 Gerar storyboard →'}
+              {busy ? 'Gerando storyboard...' : 'Gerar storyboard →'}
             </button>
           ) : (
             <div className="space-y-3">
@@ -407,7 +532,7 @@ export default function LaunchPage() {
       {step === 'render' && (
         <div className="rounded-2xl p-5 space-y-4"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <h2 className="font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>🎥 Renderizar MP4</h2>
+          <h2 className="font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>Renderizar MP4</h2>
           <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
             1080×1920 · H.264 · FFmpeg arm64
           </p>
@@ -420,9 +545,10 @@ export default function LaunchPage() {
               style={{ background: 'var(--brand)', color: '#fff', opacity: busy ? 0.7 : 1 }}>
               {busy ? (
                 <span className="flex items-center justify-center gap-2">
-                  <span className="animate-spin">⚙️</span> Renderizando (pode demorar 30-60s)…
+                  <span className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin inline-block" />
+                  Renderizando (30-60s)…
                 </span>
-              ) : '⚙️ Renderizar →'}
+              ) : 'Renderizar →'}
             </button>
           ) : (
             <div className="space-y-3">
@@ -433,16 +559,16 @@ export default function LaunchPage() {
                 controls muted playsInline
               />
               <div className="flex gap-2 text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                <span>⏱ {renderResult.durationSec.toFixed(1)}s</span>
+                <span>{renderResult.durationSec.toFixed(1)}s</span>
                 <span>·</span>
-                <span>📦 {(renderResult.fileSizeBytes / 1024 / 1024).toFixed(1)} MB</span>
+                <span>{(renderResult.fileSizeBytes / 1024 / 1024).toFixed(1)} MB</span>
                 <span>·</span>
-                <span>✅ 9:16</span>
+                <span>9:16</span>
               </div>
               <a href={renderResult.downloadUrl} download={renderResult.filename}
                 className="block text-center py-2.5 rounded-xl text-sm font-medium transition-all active:scale-95"
                 style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}>
-                ⬇️ Baixar MP4
+                Baixar MP4
               </a>
               <button
                 onClick={() => setStep('distribute')}
@@ -459,14 +585,14 @@ export default function LaunchPage() {
       {step === 'distribute' && renderResult && (
         <div className="rounded-2xl p-5 space-y-4"
           style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <h2 className="font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>📡 Distribuir</h2>
+          <h2 className="font-bold" style={{ color: 'rgba(255,255,255,0.9)' }}>Distribuir</h2>
 
           {/* Channel picker */}
           <div className="space-y-2">
             {[
-              { key: 'instagram', label: 'Instagram Reels', icon: '📸' },
-              { key: 'youtube_shorts', label: 'YouTube Shorts', icon: '▶️' },
-              { key: 'manual', label: 'Manual / Shopee', icon: '🛍️' },
+              { key: 'instagram', label: 'Instagram Reels', tag: 'IG' },
+              { key: 'youtube_shorts', label: 'YouTube Shorts', tag: 'YT' },
+              { key: 'manual', label: 'Manual / Shopee', tag: 'SH' },
             ].map(ch => (
               <div key={ch.key}
                 onClick={() => setChannel(ch.key)}
@@ -475,7 +601,8 @@ export default function LaunchPage() {
                   border: channel === ch.key ? '2px solid var(--brand)' : '1px solid rgba(255,255,255,0.1)',
                   background: channel === ch.key ? 'rgba(255,107,53,0.08)' : 'rgba(255,255,255,0.03)',
                 }}>
-                <span className="text-lg">{ch.icon}</span>
+                <span className="text-[10px] font-bold w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}>{ch.tag}</span>
                 <span className="text-sm font-medium" style={{ color: 'rgba(255,255,255,0.8)' }}>{ch.label}</span>
                 {channel === ch.key && <span className="ml-auto" style={{ color: 'var(--brand)' }}>✓</span>}
               </div>
@@ -493,22 +620,43 @@ export default function LaunchPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={handlePublish}
-              disabled={busy}
-              className="py-3 rounded-xl font-bold text-sm transition-all active:scale-95"
-              style={{ background: 'var(--brand)', color: '#fff', opacity: busy ? 0.7 : 1 }}>
-              {busy ? 'Publicando...' : '🚀 Publicar'}
-            </button>
-            <a href="/distribute"
-              className="flex items-center justify-center py-3 rounded-xl text-sm font-medium transition-all active:scale-95"
-              style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}>
-              Ver Distribuição
-            </a>
-          </div>
+          {publishSuccess ? (
+            <div className="rounded-xl p-4 text-center space-y-3"
+              style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)' }}>
+              <p className="font-bold text-sm" style={{ color: '#22c55e' }}>Publicação enviada</p>
+              <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>Acompanhe o status em Distribuição.</p>
+              <a href="/distribute"
+                className="block py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95"
+                style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>
+                Ver em Distribuição →
+              </a>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={handlePublish}
+                disabled={busy}
+                className="py-3 rounded-xl font-bold text-sm transition-all active:scale-95"
+                style={{ background: 'var(--brand)', color: '#fff', opacity: busy ? 0.7 : 1 }}>
+                {busy ? 'Publicando...' : 'Publicar'}
+              </button>
+              <a href="/distribute"
+                className="flex items-center justify-center py-3 rounded-xl text-sm font-medium transition-all active:scale-95"
+                style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}>
+                Ver Distribuição
+              </a>
+            </div>
+          )}
         </div>
       )}
     </div>
+  )
+}
+
+export default function LaunchPage() {
+  return (
+    <Suspense>
+      <LaunchPageInner />
+    </Suspense>
   )
 }

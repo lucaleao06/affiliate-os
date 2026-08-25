@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 // Bottom nav: max 5 items (mobile)
 const bottomNav = [
@@ -16,6 +17,7 @@ const bottomNav = [
 const sidebarNav = [
   { href: '/hoje', label: 'Hoje', icon: '□', group: 'core' },
   { href: '/dashboard', label: 'Dashboard', icon: '⌂', group: 'core' },
+  { href: '/radar', label: 'Radar', icon: '◎', group: 'core' },
   { href: '/launch', label: 'Lançar Campanha', icon: '＋', group: 'core' },
   { href: '/products', label: 'Produtos', icon: '⌕', group: 'core' },
   { href: '/products/add-own', label: 'Produto Próprio', icon: '◇', group: 'core' },
@@ -24,6 +26,7 @@ const sidebarNav = [
   { href: '/distribute', label: 'Distribuição', icon: '↗', group: 'publish' },
   { href: '/connect', label: 'Conexões', icon: '⟡', group: 'publish' },
   { href: '/revenue', label: 'Receita', icon: 'R$', group: 'analytics' },
+  { href: '/sales', label: 'Vendas', icon: '$', group: 'analytics' },
   { href: '/growth', label: 'Growth', icon: '↗', group: 'analytics' },
   { href: '/notifications', label: 'Notificações', icon: '•', group: 'analytics' },
   { href: '/sales/import', label: 'Importar Vendas', icon: '↓', group: 'analytics' },
@@ -39,6 +42,16 @@ const groups = [
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    // When user is on /notifications, they're reading them — badge shows 0
+    if (pathname === '/notifications') { queueMicrotask(() => setUnreadCount(0)); return }
+    fetch('/api/notifications?unread=1')
+      .then(r => r.json())
+      .then(d => setUnreadCount((d.notifications ?? []).length))
+      .catch(() => {})
+  }, [pathname]) // Re-fetch on navigation
 
   function isActive(href: string) {
     if (href === '/dashboard') return pathname === '/dashboard'
@@ -83,7 +96,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         } : { color: 'rgba(255,255,255,0.5)' }}
                       >
                         <span className="text-base">{item.icon}</span>
-                        {item.label}
+                        <span className="flex-1">{item.label}</span>
+                        {item.href === '/notifications' && unreadCount > 0 && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                            style={{ background: 'var(--brand)', color: '#fff', minWidth: 18, textAlign: 'center' }}>
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                          </span>
+                        )}
                       </Link>
                     )
                   })}
@@ -93,7 +112,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
         <div className="px-5 py-3 border-t text-[10px]" style={{ borderColor: 'var(--border)', color: 'rgba(255,255,255,0.2)' }}>
-          v0.3 · FFmpeg arm64 ✅
+          v0.3 · FFmpeg arm64
         </div>
       </aside>
 
@@ -105,9 +124,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           paddingTop: 'calc(var(--sat) + 12px)',
         }}>
         <span className="text-base font-black" style={{ color: 'var(--brand)' }}>Affiliate OS</span>
-        <Link href="/notifications" className="text-xs px-2 py-1 rounded-full font-medium"
-          style={{ background: 'rgba(255,107,53,0.15)', color: 'var(--brand)' }}>
-          •
+        <Link href="/notifications" className="text-xs px-2 py-1 rounded-full font-bold"
+          style={{ background: unreadCount > 0 ? 'var(--brand)' : 'rgba(255,107,53,0.15)', color: '#fff', minWidth: 28, textAlign: 'center' }}>
+          {unreadCount > 0 ? (unreadCount > 99 ? '99+' : String(unreadCount)) : '•'}
         </Link>
       </header>
 

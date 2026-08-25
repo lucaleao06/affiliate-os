@@ -73,7 +73,7 @@ function TextInput({
         placeholder={placeholder}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        className="flex-1 px-3 py-3 text-sm bg-transparent outline-none min-h-[44px] placeholder-gray-600"
+        className="flex-1 px-3 py-3 text-sm bg-transparent outline-none min-h-[44px]"
       />
     </div>
   )
@@ -195,7 +195,7 @@ export default function AddOwnProductPage() {
     return (
       <div className="min-h-screen text-white" style={{ background: 'var(--bg)' }}>
         <div className="max-w-lg mx-auto px-4 py-10 space-y-6">
-          <div className="text-4xl text-center">⚙️</div>
+          <div className="w-12 h-12 rounded-2xl mx-auto" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }} />
           <h2 className="text-xl font-bold text-center">Atualização necessária</h2>
           <div className="rounded-xl p-5 text-sm space-y-3"
             style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
@@ -227,7 +227,7 @@ export default function AddOwnProductPage() {
         style={{ background: 'var(--bg)' }}>
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-5"
           style={{ background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.2)' }}>
-          ✅
+          <span className="w-5 h-5 rounded-full" style={{ background: '#4ade80' }} />
         </div>
         <h2 className="text-xl font-bold text-white mb-2">Produto adicionado</h2>
         <p className="text-sm mb-8 max-w-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
@@ -239,7 +239,7 @@ export default function AddOwnProductPage() {
             className="flex-1 py-3.5 rounded-xl text-sm font-bold transition active:scale-95"
             style={{ background: 'var(--brand)', color: '#fff' }}
           >
-            Lançar campanha →
+            Lançar campanha
           </button>
           <button
             onClick={() => {
@@ -280,7 +280,7 @@ export default function AddOwnProductPage() {
         <div className="rounded-xl p-4 mb-6"
           style={{ background: 'rgba(255,107,53,0.07)', border: '1px solid rgba(255,107,53,0.13)' }}>
           <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
-            <span style={{ color: 'var(--brand)' }}>📦 Pipeline idêntico ao afiliado:</span>{' '}
+            <span style={{ color: 'var(--brand)' }}>Pipeline idêntico ao afiliado:</span>{' '}
             score → criativo → vídeo → distribuição → receita. Margem real calculada aqui.
           </p>
         </div>
@@ -380,7 +380,7 @@ export default function AddOwnProductPage() {
               onChange={e => set('description', e.target.value)}
               placeholder="O que o cliente recebe ao comprar..."
               rows={3}
-              className="w-full px-3 py-3 rounded-xl text-sm text-white placeholder-gray-600 outline-none transition resize-none"
+              className="w-full px-3 py-3 rounded-xl text-sm text-white outline-none transition resize-none"
               style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', minHeight: 80 }}
               onFocus={e => (e.currentTarget.style.borderColor = inputFocusColor)}
               onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}

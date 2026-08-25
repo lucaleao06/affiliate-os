@@ -45,6 +45,24 @@ Retorne SOMENTE este JSON (sem markdown):
   "captions": ["<caption1>","<caption2>","<caption3>"]
 }`
 
+/** Strip markdown code fences and extract the first JSON object/array. */
+function extractJSON(raw: string): string {
+  // Remove ```json ... ``` or ``` ... ```
+  const stripped = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim()
+  // Find first { or [
+  const start = stripped.search(/[{[]/)
+  if (start === -1) return stripped
+  // Find matching closing bracket
+  const open = stripped[start]
+  const close = open === '{' ? '}' : ']'
+  let depth = 0
+  for (let i = start; i < stripped.length; i++) {
+    if (stripped[i] === open) depth++
+    else if (stripped[i] === close) { depth--; if (depth === 0) return stripped.slice(start, i + 1) }
+  }
+  return stripped.slice(start)
+}
+
 export class ClaudeProvider implements AIProvider {
   name = 'claude'
   private model = 'claude-haiku-4-5-20251001'
@@ -78,13 +96,13 @@ export class ClaudeProvider implements AIProvider {
 
   async scoreProduct(input: ScoreInput): Promise<ScoreOutput> {
     const text = await this.callClaude(SCORE_PROMPT(input))
-    const parsed = JSON.parse(text) as Omit<ScoreOutput, 'provider' | 'model'>
+    const parsed = JSON.parse(extractJSON(text)) as Omit<ScoreOutput, 'provider' | 'model'>
     return { ...parsed, provider: 'claude', model: this.model }
   }
 
   async generateCreatives(product: ScoreInput, score: ScoreOutput): Promise<CreativeOutput> {
     const text = await this.callClaude(CREATIVE_PROMPT(product, score))
-    const parsed = JSON.parse(text) as Omit<CreativeOutput, 'provider' | 'model'>
+    const parsed = JSON.parse(extractJSON(text)) as Omit<CreativeOutput, 'provider' | 'model'>
     return { ...parsed, provider: 'claude', model: this.model }
   }
 
@@ -113,7 +131,7 @@ Retorne SOMENTE este JSON (sem markdown):
   "editingNotes": "<notas de edição>"
 }`
     const text = await this.callClaude(prompt)
-    const parsed = JSON.parse(text) as Omit<StoryboardOutput, 'provider' | 'model'>
+    const parsed = JSON.parse(extractJSON(text)) as Omit<StoryboardOutput, 'provider' | 'model'>
     return { ...parsed, provider: 'claude', model: this.model }
   }
 }

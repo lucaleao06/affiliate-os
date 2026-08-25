@@ -58,6 +58,7 @@ export default function QueuePage() {
   const [tab, setTab] = useState<FilterTab>('pending')
   const [hideLegacy, setHideLegacy] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
+  const [bulkApproving, setBulkApproving] = useState(false)
   const [regenerating, setRegenerating] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -104,6 +105,26 @@ export default function QueuePage() {
     finally { setRegenerating(null) }
   }
 
+  const approveAll = async () => {
+    const pending = (hideLegacy ? creatives.filter(c => !isLegacyMock(c)) : creatives)
+      .filter(c => c.status === 'pending')
+    if (pending.length === 0) return
+    setBulkApproving(true)
+    setError(null)
+    try {
+      await Promise.all(pending.map(c =>
+        fetch('/api/queue', {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ id: c.id, status: 'approved' }),
+        })
+      ))
+      const fresh = await fetchQueue()
+      setCreatives(fresh)
+    } catch (err) { setError(String(err)) }
+    finally { setBulkApproving(false) }
+  }
+
   const legacyCount = creatives.filter(isLegacyMock).length
   const visible = hideLegacy ? creatives.filter(c => !isLegacyMock(c)) : creatives
   const counts = {
@@ -136,7 +157,7 @@ export default function QueuePage() {
               color: 'rgba(255,255,255,0.4)',
               border: '1px solid var(--border)',
             }}>
-            {hideLegacy ? `⚠️ ${legacyCount} legados ocultos` : `Mostrar tudo`}
+            {hideLegacy ? `${legacyCount} legados ocultos` : 'Mostrar histórico'}
           </button>
         )}
       </div>
@@ -170,6 +191,17 @@ export default function QueuePage() {
         })}
       </div>
 
+      {/* Bulk approve — only when multiple pending items */}
+      {!loading && tab === 'pending' && counts.pending > 1 && (
+        <button
+          onClick={() => { void approveAll() }}
+          disabled={bulkApproving}
+          className="w-full py-3 rounded-xl font-bold text-sm transition-all active:scale-95 disabled:opacity-50"
+          style={{ background: 'rgba(34,197,94,0.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.25)' }}>
+          {bulkApproving ? 'Aprovando todos...' : `Aprovar todos (${counts.pending})`}
+        </button>
+      )}
+
       {/* Honest AI notice for real pending creatives */}
       {!loading && tab === 'pending' && counts.pending > 0 && (
         <div className="rounded-xl px-3 py-2.5 text-xs leading-relaxed"
@@ -188,9 +220,8 @@ export default function QueuePage() {
 
       {!loading && filtered.length === 0 && (
         <div className="rounded-2xl p-10 text-center" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-          <p className="text-4xl mb-3">✅</p>
           <p className="font-semibold text-white">
-            {tab === 'pending' ? 'Fila vazia!' : 'Nenhum item aqui.'}
+            {tab === 'pending' ? 'Não há decisões pendentes' : 'Nenhum item neste estado'}
           </p>
           <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.4)' }}>
             {tab === 'pending' ? 'Adicione produtos em Produtos → Gerar Criativos.' : ''}
@@ -216,8 +247,8 @@ export default function QueuePage() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={product.image_url} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
                 ) : (
-                  <div className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center text-xl"
-                    style={{ background: 'var(--surface-2)' }}>📦</div>
+                  <div className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center"
+                    style={{ background: 'var(--surface-2)' }}><span className="w-5 h-5 rounded-md border" style={{ borderColor: 'rgba(255,255,255,0.35)' }} /></div>
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
@@ -251,25 +282,25 @@ export default function QueuePage() {
                   <div className="pt-3 space-y-3">
                     {c.hook && (
                       <div>
-                        <p className="text-xs font-semibold mb-1" style={{ color: 'var(--brand)' }}>🎣 Hook</p>
+                        <p className="text-xs font-semibold mb-1" style={{ color: 'var(--brand)' }}>ABERTURA</p>
                         <p className="text-sm text-white leading-relaxed">{c.hook}</p>
                       </div>
                     )}
                     {c.script && (
                       <div>
-                        <p className="text-xs font-semibold mb-1 text-blue-400">📝 Script</p>
+                        <p className="text-xs font-semibold mb-1" style={{ color: '#60a5fa' }}>ROTEIRO</p>
                         <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: 'rgba(255,255,255,0.7)' }}>{c.script}</p>
                       </div>
                     )}
                     {c.caption && (
                       <div>
-                        <p className="text-xs font-semibold mb-1 text-purple-400">💬 Caption</p>
+                        <p className="text-xs font-semibold mb-1" style={{ color: '#a78bfa' }}>LEGENDA</p>
                         <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>{c.caption}</p>
                       </div>
                     )}
                     {c.cta && (
                       <div>
-                        <p className="text-xs font-semibold mb-1 text-green-400">🔗 CTA</p>
+                        <p className="text-xs font-semibold mb-1" style={{ color: '#4ade80' }}>CHAMADA</p>
                         <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }}>{c.cta}</p>
                       </div>
                     )}
@@ -284,14 +315,24 @@ export default function QueuePage() {
                     disabled={isUpdating}
                     className="py-3.5 rounded-xl font-bold text-sm transition-all active:scale-95 disabled:opacity-50"
                     style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>
-                    {isUpdating ? '⏳' : '✅ Aprovar'}
+                    {isUpdating ? 'Salvando…' : 'Aprovar'}
                   </button>
                   <button onClick={() => { void updateStatus(c.id, 'rejected') }}
                     disabled={isUpdating}
                     className="py-3.5 rounded-xl font-bold text-sm transition-all active:scale-95 disabled:opacity-50"
                     style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)' }}>
-                    {isUpdating ? '⏳' : '❌ Rejeitar'}
+                    {isUpdating ? 'Salvando…' : 'Rejeitar'}
                   </button>
+                </div>
+              )}
+
+              {c.status === 'approved' && (
+                <div className="px-4 pb-4 pt-2">
+                  <a href={`/video-factory?creativeId=${c.id}`}
+                    className="block w-full text-center py-3 rounded-xl font-bold text-sm transition-all active:scale-95"
+                    style={{ background: 'var(--brand)', color: '#fff' }}>
+                    Gerar vídeo →
+                  </a>
                 </div>
               )}
 
@@ -301,7 +342,7 @@ export default function QueuePage() {
                     disabled={regenerating === c.id}
                     className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all active:scale-95 disabled:opacity-50"
                     style={{ background: 'rgba(255,107,53,0.15)', color: 'var(--brand)', border: '1px solid rgba(255,107,53,0.3)' }}>
-                    {regenerating === c.id ? '⏳ Gerando...' : '🔄 Regenerar'}
+                    {regenerating === c.id ? 'Gerando…' : 'Gerar nova versão'}
                   </button>
                   <button onClick={() => { void updateStatus(c.id, 'approved') }}
                     disabled={isUpdating}

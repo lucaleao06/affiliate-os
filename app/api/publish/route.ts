@@ -13,11 +13,11 @@ export async function GET(req: NextRequest) {
   const admin = createAdmin()
   const url = new URL(req.url)
   const status = url.searchParams.get('status')
-  const query = admin.from('publication_packages')
+  let query = admin.from('publication_packages')
     .select('*, creatives(hook, caption, cta), products(title, image_url)')
     .order('created_at', { ascending: false })
     .limit(30)
-  if (status) query.eq('status', status)
+  if (status) query = query.eq('status', status)
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ packages: data ?? [] })

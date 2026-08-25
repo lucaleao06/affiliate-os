@@ -85,9 +85,10 @@ export default function RevenuePage() {
           </div>
         ) : !data || data.isEmpty ? (
           <div className="text-center py-20">
-            <div className="text-4xl mb-3">📊</div>
-            <p className="text-gray-400 text-sm">Nenhuma venda importada ainda.</p>
-            <p className="text-gray-600 text-xs mt-1">Importe um relatório CSV do Shopee Affiliate para ver sua receita.</p>
+            <div className="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center text-xs font-bold"
+              style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.25)' }}>CSV</div>
+            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>Nenhuma venda importada ainda.</p>
+            <p className="text-xs mt-1" style={{ color: 'rgba(255,255,255,0.25)' }}>Importe um relatório CSV do Shopee Affiliate para ver sua receita.</p>
             <a
               href="/sales/import"
               className="inline-flex min-h-11 items-center rounded-xl px-4 text-xs font-bold transition-opacity hover:opacity-90"
@@ -136,12 +137,12 @@ export default function RevenuePage() {
                   {data.topProducts.map((p, i) => (
                     <div key={p.id ?? i} className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-xs text-gray-600 w-4">{i + 1}</span>
+                        <span className="text-xs w-4" style={{ color: 'rgba(255,255,255,0.3)' }}>{i + 1}</span>
                         <p className="text-sm truncate">{p.name ?? p.id ?? '—'}</p>
                       </div>
                       <div className="text-right flex-shrink-0 ml-2">
-                        <p className="text-sm font-semibold text-emerald-400">{fmt(p.commission)}</p>
-                        <p className="text-xs text-gray-600">{p.orders} pedidos</p>
+                        <p className="text-sm font-semibold" style={{ color: '#34d399' }}>{fmt(p.commission)}</p>
+                        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{p.orders} pedidos</p>
                       </div>
                     </div>
                   ))}
@@ -157,12 +158,12 @@ export default function RevenuePage() {
                   {data.topChannels.map((c, i) => (
                     <div key={c.channel ?? i} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-600 w-4">{i + 1}</span>
+                        <span className="text-xs w-4" style={{ color: 'rgba(255,255,255,0.3)' }}>{i + 1}</span>
                         <p className="text-sm">{c.channel}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold text-blue-400">{fmt(c.commission)}</p>
-                        <p className="text-xs text-gray-600">{c.orders} pedidos</p>
+                        <p className="text-sm font-semibold" style={{ color: '#60a5fa' }}>{fmt(c.commission)}</p>
+                        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{c.orders} pedidos</p>
                       </div>
                     </div>
                   ))}
@@ -178,12 +179,12 @@ export default function RevenuePage() {
                   {data.topCreatives.map((c, i) => (
                     <div key={c.creativeId ?? i} className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-xs text-gray-600 w-4">{i + 1}</span>
-                        <p className="text-xs text-gray-400 font-mono truncate">{c.creativeId}</p>
+                        <span className="text-xs w-4" style={{ color: 'rgba(255,255,255,0.3)' }}>{i + 1}</span>
+                        <p className="text-xs font-mono truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>{c.creativeId}</p>
                       </div>
                       <div className="text-right flex-shrink-0 ml-2">
-                        <p className="text-sm font-semibold text-purple-400">{fmt(c.commission)}</p>
-                        <p className="text-xs text-gray-600">{c.orders} pedidos</p>
+                        <p className="text-sm font-semibold" style={{ color: '#a78bfa' }}>{fmt(c.commission)}</p>
+                        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>{c.orders} pedidos</p>
                       </div>
                     </div>
                   ))}
@@ -191,9 +192,11 @@ export default function RevenuePage() {
               </div>
             )}
 
-            <p className="text-center text-xs text-gray-700 pb-4">
-              Dados importados do Shopee Affiliate CSV · Última importação via{' '}
-              <a href="/sales/import" className="text-blue-700 hover:text-blue-500">importar relatório</a>
+            <p className="text-center text-xs pb-4" style={{ color: 'rgba(255,255,255,0.2)' }}>
+              Dados importados do Shopee Affiliate CSV ·{' '}
+              <a href="/sales" style={{ color: 'rgba(255,255,255,0.4)' }}>ver transações</a>
+              {' · '}
+              <a href="/sales/import" style={{ color: 'rgba(255,255,255,0.4)' }}>importar relatório</a>
             </p>
           </div>
         )}

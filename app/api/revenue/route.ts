@@ -24,10 +24,10 @@ export async function GET(req: NextRequest) {
 
   const sinceISO = since ? since.toISOString() : null
 
-  // Base query builder
+  // Base query builder — must reassign after each chain call (Supabase v2 is immutable)
   function baseQuery() {
-    const q = admin.from('sales').select('*').neq('status', 'cancelled').neq('status', 'invalid')
-    if (sinceISO) q.gte('occurred_at', sinceISO)
+    let q = admin.from('sales').select('*').neq('status', 'cancelled').neq('status', 'invalid')
+    if (sinceISO) q = q.gte('occurred_at', sinceISO)
     return q
   }
 
