@@ -1,6 +1,6 @@
 import type { PublicationPackage, PublicationChecklist, RightsStatus } from './types'
 
-const SAFE_RIGHTS: RightsStatus[] = ['owned', 'seller_provided', 'licensed', 'generated']
+const SAFE_RIGHTS: RightsStatus[] = ['owned', 'cleared', 'seller_provided', 'licensed', 'generated']
 
 export function buildPublicationChecklist(pkg: Omit<PublicationPackage, 'checklist' | 'status' | 'statusReason'>): PublicationChecklist {
   const failReasons: string[] = []

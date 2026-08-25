@@ -5,7 +5,7 @@
 
 export type PublicationChannel = 'instagram' | 'tiktok' | 'youtube_shorts' | 'shopee_video' | 'manual'
 
-export type RightsStatus = 'owned' | 'seller_provided' | 'licensed' | 'generated' | 'unknown'
+export type RightsStatus = 'owned' | 'seller_provided' | 'licensed' | 'generated' | 'cleared' | 'unknown'
 
 export type PublicationStatus =
   | 'draft'
