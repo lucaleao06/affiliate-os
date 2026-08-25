@@ -19,6 +19,8 @@ interface Creative {
       image_url: string | null
       price: number | null
       commission_rate: number
+      product_type: string | null
+      margin_pct: number | null
     } | null
   } | null
 }
@@ -263,12 +265,22 @@ export default function QueuePage() {
                       <Pill status={c.status} />
                     </div>
                   </div>
-                  {product?.commission_rate && (
-                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                      {product.commission_rate}% comissão
-                      {product.price ? ` · R$ ${product.price}` : ''}
-                    </p>
-                  )}
+                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    {product?.product_type === 'owned' && (
+                      <span className="text-xs px-1.5 py-0.5 rounded font-bold"
+                        style={{ background: 'rgba(255,107,53,0.15)', color: 'var(--brand)', border: '1px solid rgba(255,107,53,0.3)' }}>
+                        PRÓPRIO
+                      </span>
+                    )}
+                    {product && (
+                      <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                        {product.product_type === 'owned'
+                          ? `${product.margin_pct ?? '—'}% margem`
+                          : `${product.commission_rate}% comissão`}
+                        {product.price ? ` · R$ ${product.price}` : ''}
+                      </p>
+                    )}
+                  </div>
                   <p className="text-sm mt-1.5 text-white/80 line-clamp-2">
                     {c.hook ?? c.script?.slice(0, 80) ?? '—'}
                   </p>

@@ -11,7 +11,7 @@ interface Creative {
   hook: string | null
   script: string | null
   status: string
-  campaigns: { name: string; products: { id: string; title: string; price: number | null; image_url: string | null } | null } | null
+  campaigns: { name: string; products: { id: string; title: string; price: number | null; image_url: string | null; product_type: string | null; margin_pct: number | null } | null } | null
 }
 
 interface RenderResult {
@@ -170,8 +170,19 @@ function VideoFactoryPageInner() {
                     style={{ background: 'var(--surface-2)', color: 'rgba(255,255,255,0.3)' }}>P</div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">{product?.title ?? '—'}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-semibold text-white truncate">{product?.title ?? '—'}</p>
+                    {product?.product_type === 'owned' && (
+                      <span className="flex-shrink-0 text-xs px-1.5 py-0.5 rounded font-bold"
+                        style={{ background: 'rgba(255,107,53,0.15)', color: 'var(--brand)', border: '1px solid rgba(255,107,53,0.3)' }}>
+                        PRÓPRIO
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs truncate mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                    {product?.product_type === 'owned' && product?.margin_pct
+                      ? `${product.margin_pct}% margem · `
+                      : ''}
                     {c.hook?.slice(0, 55) ?? '—'}
                   </p>
                 </div>

@@ -12,7 +12,7 @@ export async function GET() {
         *,
         campaigns (
           id, name,
-          products (id, title, image_url, price, commission_rate)
+          products (id, title, image_url, price, commission_rate, product_type, margin_pct)
         )
       `)
       .in('status', ['pending', 'approved', 'rejected'])

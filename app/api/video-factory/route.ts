@@ -9,7 +9,7 @@ export async function GET() {
   const admin = createAdmin()
   const { data: creatives } = await admin
     .from('creatives')
-    .select('id, hook, script, status, campaigns(name, products(id, title, price, commission_rate, image_url))')
+    .select('id, hook, script, status, campaigns(name, products(id, title, price, commission_rate, image_url, product_type, margin_pct))')
     .eq('status', 'approved')
     .order('updated_at', { ascending: false })
 
