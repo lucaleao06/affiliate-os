@@ -1,12 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 // Bottom nav: max 5 items (mobile)
 const bottomNav = [
-  { href: '/dashboard', label: 'Home', icon: '⌂' },
+  { href: '/dashboard', label: 'Início', icon: '⌂' },
   { href: '/queue', label: 'Fila', icon: '□' },
   { href: '/video-factory', label: 'Vídeos', icon: '▷' },
   { href: '/distribute', label: 'Distribuir', icon: '↗' },
@@ -27,22 +28,42 @@ const sidebarNav = [
   { href: '/connect', label: 'Conexões', icon: '⟡', group: 'publish' },
   { href: '/revenue', label: 'Receita', icon: 'R$', group: 'analytics' },
   { href: '/sales', label: 'Vendas', icon: '$', group: 'analytics' },
-  { href: '/growth', label: 'Growth', icon: '↗', group: 'analytics' },
+  { href: '/growth', label: 'Crescimento', icon: '↗', group: 'analytics' },
   { href: '/notifications', label: 'Notificações', icon: '•', group: 'analytics' },
   { href: '/sales/import', label: 'Importar Vendas', icon: '↓', group: 'analytics' },
-  { href: '/autopilot', label: 'Autopilot', icon: '◌', group: 'automation' },
+  { href: '/autopilot', label: 'Piloto Automático', icon: '◌', group: 'automation' },
 ]
 
 const groups = [
-  { key: 'core', label: 'Core' },
+  { key: 'core', label: 'Principal' },
   { key: 'publish', label: 'Publicação' },
-  { key: 'analytics', label: 'Analytics' },
+  { key: 'analytics', label: 'Análise' },
   { key: 'automation', label: 'Automação' },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [unreadCount, setUnreadCount] = useState(0)
+  const [authChecked, setAuthChecked] = useState(false)
+
+  // Auth guard
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) {
+        router.replace('/login')
+      } else {
+        setAuthChecked(true)
+      }
+    })
+  }, [router])
+
+  async function handleLogout() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.replace('/login')
+  }
 
   useEffect(() => {
     // When user is on /notifications, they're reading them — badge shows 0
@@ -57,6 +78,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (href === '/dashboard') return pathname === '/dashboard'
     if (href === '/mais') return false
     return pathname.startsWith(href)
+  }
+
+  if (!authChecked) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
+        <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>Carregando...</div>
+      </div>
+    )
   }
 
   return (
@@ -111,8 +140,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )
           })}
         </nav>
-        <div className="px-5 py-3 border-t text-[10px]" style={{ borderColor: 'var(--border)', color: 'rgba(255,255,255,0.2)' }}>
-          v0.3 · FFmpeg arm64
+        <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--border)' }}>
+          <button onClick={handleLogout}
+            className="w-full text-left text-[11px] px-3 py-2 rounded-lg hover:bg-white/5 transition-all"
+            style={{ color: 'rgba(255,255,255,0.3)' }}>
+            ⎋ Sair
+          </button>
+          <div className="text-[10px] px-3 mt-1" style={{ color: 'rgba(255,255,255,0.15)' }}>v0.3 · FFmpeg arm64</div>
         </div>
       </aside>
 
