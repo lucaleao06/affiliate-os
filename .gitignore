@@ -43,3 +43,7 @@ next-env.d.ts
 # render outputs
 storage/renders/
 *.mp4
+
+# Binaries
+bin/ffmpeg
+bin/ffprobe
